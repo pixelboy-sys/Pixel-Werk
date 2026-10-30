@@ -58,6 +58,21 @@ svg{display:block}
 /* Bühne */
 #stage{position:relative;overflow:hidden;background:var(--stage)}
 #cv{position:absolute;left:0;top:0;display:block;touch-action:none;transform-origin:50% 50%}
+/* Referenzfenster */
+.ref-win{position:absolute;z-index:6;display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:0 14px 40px rgba(0,0,0,.5);overflow:hidden;touch-action:none}
+.ref-grab{height:18px;display:grid;place-items:center;cursor:grab;flex:none;touch-action:none}
+.ref-grab span{width:44px;height:5px;border-radius:3px;background:var(--line)}
+.ref-head{display:flex;align-items:center;gap:6px;padding:0 6px 6px;cursor:grab;flex:none}
+.ref-head .seg{margin:0 auto 0 0;flex:none;padding:2px}
+.ref-head .seg button{padding:6px 8px;font-size:12px;white-space:nowrap}
+.ref-btn{width:34px;height:32px;display:grid;place-items:center;border-radius:9px;background:var(--panel-2);flex:none}
+.ref-btn svg{width:18px;height:18px}
+.ref-body{position:relative;flex:1;min-height:0;background:var(--stage)}
+#refCv{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+.ref-empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:14px;text-align:center}
+.ref-empty p{margin:0;font-size:12px;color:var(--muted)}
+.ref-grip{position:absolute;right:0;bottom:0;width:26px;height:26px;cursor:nwse-resize;touch-action:none;
+  background:linear-gradient(135deg,transparent 52%,var(--muted) 52%,var(--muted) 58%,transparent 58%,transparent 70%,var(--muted) 70%,var(--muted) 76%,transparent 76%)}
 .side{position:absolute;left:max(12px,env(safe-area-inset-left,0px));top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:10px;align-items:center;z-index:5}
 .sizer{position:relative;width:38px;height:170px;border-radius:19px;background:var(--panel);border:1px solid var(--line);overflow:hidden;touch-action:none;cursor:ns-resize}
 .sizer-fill{position:absolute;left:0;right:0;bottom:0;background:var(--panel-2)}
@@ -389,6 +404,18 @@ svg{display:block}
 
   <main id="stage">
     <canvas id="cv" aria-label="Zeichenfläche"></canvas>
+    <div class="ref-win" id="refWin" hidden>
+      <div class="ref-grab" id="refGrab" aria-hidden="true"><span></span></div>
+      <div class="ref-head" id="refHead">
+        <div class="seg" id="refMode"><button data-rm="img">Bild</button><button data-rm="live">Leinwand</button></div>
+        <button class="ref-btn" id="refOpen" aria-label="Bild öffnen" title="Bild öffnen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="14" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M20.5 16l-5-5-8 8"/></svg></button>
+        <button class="ref-btn" id="refClose" aria-label="Referenz schließen" title="Referenz schließen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+      </div>
+      <div class="ref-body"><canvas id="refCv" aria-label="Referenzbild"></canvas>
+        <div class="ref-empty" id="refEmpty"><button class="btn primary" id="refPick">Bild öffnen</button><p>Ein Finger verschiebt, zwei Finger zoomen. Gedrückt halten nimmt eine Farbe auf.</p></div>
+      </div>
+      <div class="ref-grip" id="refGrip" aria-hidden="true"></div>
+    </div>
     <div class="side">
       <div class="sizer" id="sizer" role="slider" aria-label="Pinselgröße" aria-valuemin="1" aria-valuemax="8" tabindex="0">
         <div class="sizer-fill" id="sizerFill"></div><span class="sizer-lab">px</span><span class="sizer-val" id="sizeVal">1</span>
@@ -488,17 +515,19 @@ svg{display:block}
       <div class="act-list" data-tab="add">
         <button data-a="import">Bild oder Spritesheet importieren …<small>PNG oder animiertes GIF in Frames aufteilen</small></button>
         <button data-a="vid">Video, GIF oder Bilder pixeln …<small>Mit gemeinsamer Palette in Pixel-Art umwandeln</small></button>
-        <button data-a="open">Projekt öffnen …<small>Eine gespeicherte .json-Datei laden</small></button>
+        <button data-a="open">Projekt öffnen …<small>Pixelwerk-Projekt (.json) oder Aseprite-Datei (.aseprite)</small></button>
       </div>
       <div class="act-list" data-tab="canvas">
         <button data-a="new">Neues Projekt …<small>Leere Leinwand in einem neuen Tab</small></button>
         <button data-a="canvas">Leinwand anpassen …<small>Zuschneiden, erweitern oder den Inhalt skalieren</small></button>
         <button data-a="grid" aria-pressed="true">Pixelraster</button>
+        <button data-a="ref" aria-pressed="false">Referenzfenster</button>
       </div>
       <div class="act-list" data-tab="share">
         <button data-a="export">Spritesheet exportieren …<small>PNG mit allen Frames, z. B. für Godot</small></button>
         <button data-a="gif">Als GIF exportieren …<small>Animation mit Endlosschleife</small></button>
         <button data-a="save">Projekt speichern<small>.json mit allen Frames, Ebenen und Skeletten</small></button>
+        <button data-a="ase">Als Aseprite speichern (Beta)<small>Ebenen und Frames für Aseprite am Computer</small></button>
       </div>
       <div class="act-list" data-tab="prefs">
         <div class="lang-row"><span>Sprache</span><div class="seg" id="langSeg" translate="no"><button data-lang="de">Deutsch</button><button data-lang="en">English</button><button data-lang="ja">日本語</button></div></div>
@@ -613,8 +642,9 @@ svg{display:block}
 
 <div class="modal" id="modal" hidden><div class="sheet" id="sheet" role="dialog" aria-modal="true"></div></div>
 <input type="file" id="fileImg" accept="image/png,image/gif,image/webp,image/jpeg" hidden>
-<input type="file" id="fileProj" accept=".json,application/json" hidden>
+<input type="file" id="fileProj" hidden>
 <input type="file" id="fileVid" accept="video/*,image/*" multiple hidden>
+<input type="file" id="fileRef" accept="image/*" hidden>
 
 <script>
 (() => {
@@ -624,7 +654,7 @@ const clamp = (v, a = 0, b = 1) => v < a ? a : v > b ? b : v;
 const esc = s => String(s).replace(/[<>&"]/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[c]));
 
 /* Wörterbuch Deutsch → [Englisch, Japanisch] */
-const I18N = {"x":{"Aktionen":["Actions","アクション"],"Anpassungen":["Adjustments","調整"],"Auswahl (S)":["Select (S)","選択 (S)"],"Transformieren (T)":["Transform (T)","変形 (T)"],"Stift (B)":["Pencil (B)","ペン (B)"],"Füllen (G)":["Fill (G)","塗りつぶし (G)"],"Radierer (E)":["Eraser (E)","消しゴム (E)"],"Ebenen (L)":["Layers (L)","レイヤー (L)"],"Farbe wählen":["Choose color","色を選択"],"Offene Projekte":["Open projects","開いているプロジェクト"],"Neues Projekt":["New project","新規プロジェクト"],"Zeichenfläche":["Canvas","キャンバス"],"Pinselgröße":["Brush size","ブラシサイズ"],"Pipette (I)":["Eyedropper (I)","スポイト (I)"],"Pipette (I) – oder Finger gedrückt halten":["Eyedropper (I) – or press and hold a finger","スポイト (I) – または指で長押し"],"Rückgängig":["Undo","取り消し"],"Rückgängig (Strg+Z)":["Undo (Ctrl+Z)","取り消し (Ctrl+Z)"],"Wiederholen":["Redo","やり直し"],"Wiederholen (Strg+Umschalt+Z)":["Redo (Ctrl+Shift+Z)","やり直し (Ctrl+Shift+Z)"],"Zurück zur Figur":["Back to the figure","フィギュアに戻る"],"Skelett bearbeiten":["Edit skeleton","スケルトンを編集"],"90 Grad nach links drehen":["Rotate 90° left","左に90°回転"],"90 Grad nach rechts drehen":["Rotate 90° right","右に90°回転"],"Aktuelle Farbe":["Current color","現在の色"],"Vorherige Farbe":["Previous color","前の色"],"Vorherige Farbe wählen":["Choose previous color","前の色を選択"],"Hex-Farbwert":["Hex color value","HEXカラー値"],"Nach links":["Move left","左へ"],"Nach rechts":["Move right","右へ"],"Langsamer":["Slower","遅く"],"Schneller":["Faster","速く"],"Neue Farbe als Hex":["New color as hex","新しい色（HEX）"],"Neue Ebene":["New layer","新規レイヤー"],"Abspielen":["Play","再生"],"Abspielen (Enter)":["Play (Enter)","再生 (Enter)"],"Bildrate und Zwiebelschicht":["Frame rate and onion skin","フレームレートとオニオンスキン"],"Neuer leerer Frame":["New empty frame","新しい空のフレーム"],"Aufbauen":["Rig","組み立て"],"Animieren":["Animate","アニメート"],"Knochen anfügen":["Add bone","ボーンを追加"],"Knochen löschen":["Delete bone","ボーンを削除"],"Umbenennen":["Rename","名前を変更"],"Zuweisen-Pinsel":["Assign brush","割り当てブラシ"],"Automatisch zuordnen":["Auto-assign","自動で割り当て"],"Aufbau auf alle Frames":["Rig to all frames","構造を全フレームに"],"Gelenke füllen":["Fill joints","関節を埋める"],"Pose zurücksetzen":["Reset pose","ポーズをリセット"],"Pose einbacken":["Bake pose","ポーズを焼き込む"],"Rechteck":["Rectangle","長方形"],"Lasso":["Lasso","なげなわ"],"Farbe":["Color","色"],"Zusammenhängend":["Contiguous","隣接のみ"],"Neu":["New","新規"],"Hinzufügen":["Add","追加"],"Abziehen":["Subtract","削除"],"Alles":["All","すべて"],"Transformieren":["Transform","変形"],"In nächsten Frame":["To next frame","次のフレームへ"],"Als neue Ebene":["As new layer","新規レイヤーとして"],"Lücken füllen":["Fill gaps","隙間を埋める"],"Inhalt löschen":["Clear content","内容を消去"],"Umkehren":["Invert","反転"],"Aufheben":["Deselect","選択解除"],"Dieser Frame":["This frame","このフレーム"],"Alle Frames":["All frames","全フレーム"],"Spiegeln ↔":["Flip ↔","反転 ↔"],"Spiegeln ↕":["Flip ↕","反転 ↕"],"Einpassen":["Fit","フィット"],"Zurücksetzen":["Reset","リセット"],"Abbrechen":["Cancel","キャンセル"],"Fertig":["Done","完了"],"Farbwähler":["Color picker","カラーピッカー"],"Paletten":["Palettes","パレット"],"Im Projekt":["In project","プロジェクト内"],"Zuletzt verwendet":["Recently used","最近使った色"],"Bearbeiten":["Edit","編集"],"Feld antippen und mit dem Farbwähler live ändern. + fügt die aktuelle Farbe hinzu.":["Tap a swatch and change it live with the color picker. + adds the current color.","スウォッチをタップしてカラーピッカーでその場で変更。+ で現在の色を追加します。"],"Entfernen":["Remove","削除"],"Farben im Projekt":["Colors in project","プロジェクト内の色"],"Tippen wählt die Farbe. Gedrückt halten färbt sie auf der aktiven Ebene in allen Frames um.":["Tap to choose the color. Press and hold to recolor it on the active layer in all frames.","タップで色を選択。長押しすると、アクティブなレイヤーの全フレームでその色を置き換えます。"],"Leinwand":["Canvas","キャンバス"],"Teilen":["Share","共有"],"Einstellungen":["Settings","設定"],"Bild oder Spritesheet importieren …":["Import image or sprite sheet …","画像・スプライトシートを読み込む…"],"PNG oder animiertes GIF in Frames aufteilen":["Split a PNG or animated GIF into frames","PNGやアニメGIFをフレームに分割"],"Video, GIF oder Bilder pixeln …":["Pixelate video, GIF or images …","動画・GIF・画像をドット化…"],"Mit gemeinsamer Palette in Pixel-Art umwandeln":["Turn into pixel art with a shared palette","共通パレットでドット絵に変換"],"Projekt öffnen …":["Open project …","プロジェクトを開く…"],"Eine gespeicherte .json-Datei laden":["Load a saved .json file","保存した .json ファイルを読み込む"],"Neues Projekt …":["New project …","新規プロジェクト…"],"Leere Leinwand in einem neuen Tab":["Empty canvas in a new tab","新しいタブに空のキャンバス"],"Leinwand anpassen …":["Canvas size …","キャンバスサイズ…"],"Zuschneiden, erweitern oder den Inhalt skalieren":["Crop, extend or scale the content","切り抜き・拡張・内容の拡大縮小"],"Pixelraster":["Pixel grid","ピクセルグリッド"],"Spritesheet exportieren …":["Export sprite sheet …","スプライトシートを書き出す…"],"PNG mit allen Frames, z. B. für Godot":["PNG with all frames, e.g. for Godot","全フレームのPNG（Godotなど向け）"],"Als GIF exportieren …":["Export as GIF …","GIFで書き出す…"],"Animation mit Endlosschleife":["Animation with endless loop","無限ループのアニメーション"],"Projekt speichern":["Save project","プロジェクトを保存"],".json mit allen Frames, Ebenen und Skeletten":[".json with all frames, layers and skeletons","全フレーム・レイヤー・スケルトンを含む .json"],"Mit dem Finger zeichnen":["Draw with finger","指で描く"],"Zwei Finger tippen:":["Two-finger tap:","2本指タップ:"],"Drei Finger tippen:":["Three-finger tap:","3本指タップ:"],"Finger gedrückt halten:":["Press and hold a finger:","指で長押し:"],"Farbe aufnehmen":["Pick color","色を取得"],"Zwei Finger ziehen:":["Two-finger drag:","2本指ドラッグ:"],"Zoomen und Verschieben":["Zoom and pan","ズームと移動"],"Zwei Finger drehen:":["Two-finger rotate:","2本指で回転:"],"Leinwand drehen (rastet bei 90° ein)":["Rotate canvas (snaps at 90°)","キャンバスを回転（90°でスナップ）"],"Schnell zusammenkneifen:":["Quick pinch:","素早くピンチ:"],"Leinwand einpassen und gerade richten":["Fit and straighten the canvas","キャンバスをフィットしてまっすぐに"],"Aktive Ebene antippen:":["Tap active layer:","アクティブなレイヤーをタップ:"],"Ebenen-Optionen":["Layer options","レイヤーオプション"],"Aktiven Frame antippen:":["Tap active frame:","アクティブなフレームをタップ:"],"Frame-Optionen":["Frame options","フレームオプション"],"Tab gedrückt halten:":["Press and hold a tab:","タブを長押し:"],"Projekt umbenennen":["Rename project","プロジェクト名を変更"],"Stift oder Radierer zweimal antippen:":["Tap pencil or eraser twice:","ペンか消しゴムを2回タップ:"],"Pinselbibliothek":["Brush library","ブラシライブラリ"],"Tastatur:":["Keyboard:","キーボード:"],"B, G, E, I, S, T, L, O, D, M, Leertaste ziehen, ← →, Strg+Z":["B, G, E, I, S, T, L, O, D, M, Space + drag, ← →, Ctrl+Z","B, G, E, I, S, T, L, O, D, M, Space＋ドラッグ, ← →, Ctrl+Z"],"Pinsel":["Brush","ブラシ"],"Symmetrie":["Symmetry","対称"],"Spiegelt jeden Strich an der senkrechten Mitte (M)":["Mirrors every stroke at the vertical center (M)","各ストロークを縦の中心で反転 (M)"],"Die Größe stellst du links ein. Abdunkeln und Aufhellen gehen bei Palettenfarben eine Palettenstufe weiter, bei allen anderen Farben verschieben sie Helligkeit und Farbton.":["Set the size on the left. Darken and Lighten move one palette step for palette colors; for all other colors they shift brightness and hue.","サイズは左で設定します。「暗く」「明るく」はパレットの色ならパレットを1段階進め、それ以外の色では明るさと色相をずらします。"],"Farbton, Sättigung, Helligkeit …":["Hue, saturation, brightness …","色相・彩度・明るさ…"],"Dazu Kontrast, Temperatur und Invertieren, für alle Frames":["Plus contrast, temperature and invert, for all frames","コントラスト・色温度・反転も、全フレームに"],"Verlaufsumsetzung …":["Gradient map …","グラデーションマップ…"],"Helligkeit auf einen Farbverlauf setzen, für alle Frames":["Map brightness onto a color gradient, for all frames","明るさをグラデーションに置き換え（全フレーム）"],"Auf Palette umfärben …":["Recolor to palette …","パレットに合わせて色変換…"],"Jede Farbe durch die ähnlichste Palettenfarbe ersetzen":["Replace each color with the closest palette color","各色をパレットの最も近い色に置き換え"],"Farbe umfärben":["Recolor","色の置き換え"],"Eine Farbe antippen und in allen Frames tauschen":["Tap a color and swap it in all frames","色をタップして全フレームで置き換え"],"Risse auf der aktiven Ebene schließen, in der Auswahl falls vorhanden":["Close cracks on the active layer, inside the selection if there is one","アクティブなレイヤーの隙間を埋める（選択範囲があればその中）"],"Animation":["Animation","アニメーション"],"Bildrate":["Frame rate","フレームレート"],"Zwiebelschicht":["Onion skin","オニオンスキン"],"Vorigen Frame durchscheinend zeigen":["Show the previous frame translucent","前のフレームを半透明で表示"],"Frame":["Frame","フレーム"],"Frames":["Frames","フレーム"],"Duplizieren":["Duplicate","複製"],"Löschen":["Delete","削除"],"Nur dieser Frame":["Only this frame","このフレームのみ"],"Transparent":["Transparent","透明"],"Übernehmen":["Apply","適用"],"Ebenen":["Layers","レイヤー"],"Ebene":["Layer","レイヤー"],"Nach oben":["Move up","上へ"],"Nach unten":["Move down","下へ"],"In Frames kopieren …":["Copy to frames …","フレームにコピー…"],"Nach unten zusammenfügen":["Merge down","下のレイヤーと結合"],"Skelett hinzufügen …":["Add skeleton …","スケルトンを追加…"],"Aktive Ebene noch einmal antippen für Optionen. Beim Export werden alle sichtbaren Ebenen zusammengefügt.":["Tap the active layer again for options. All visible layers are merged on export.","アクティブなレイヤーをもう一度タップするとオプション。書き出し時は表示中のレイヤーがすべて結合されます。"],"Transformieren abgebrochen":["Transform canceled","変形をキャンセルしました"],"Umfärben abgebrochen":["Recolor canceled","色の置き換えをキャンセルしました"],"Nichts zum Rückgängigmachen":["Nothing to undo","取り消す操作はありません"],"Nichts zum Wiederholen":["Nothing to redo","やり直す操作はありません"],"Wiederholt":["Redone","やり直しました"],"Apple Pencil erkannt: Mit dem Finger verschiebst du jetzt die Leinwand":["Apple Pencil detected: your finger now moves the canvas","Apple Pencilを検出：指でキャンバスを移動します"],"Eingepasst":["Fitted","フィットしました"],"Dort ist kein Pixel":["There is no pixel there","そこにはピクセルがありません"],"Pixel":["Pixel","ピクセル"],"Quadratisch, harte Kanten":["Square, hard edges","四角、硬いエッジ"],"Rund":["Round","丸"],"Runde Spitze ab 3 px":["Round tip from 3 px","3 px以上で丸い先端"],"Pixel-Perfect":["Pixel-Perfect","ピクセルパーフェクト"],"Saubere 1-px-Linien ohne doppelte Ecken":["Clean 1 px lines without double corners","角が重ならないきれいな1 px線"],"Dither 50 %":["Dither 50 %","ディザ 50 %"],"Schachbrettmuster":["Checkerboard pattern","市松模様"],"Dither 25 %":["Dither 25 %","ディザ 25 %"],"Lockeres Rautenmuster":["Loose diamond pattern","まばらなひし形模様"],"Sprühdose":["Spray can","スプレー"],"Verstreute Pixel":["Scattered pixels","散らばったピクセル"],"Abdunkeln":["Darken","暗く"],"Eine Stufe dunkler, Schatten leicht ins Blaue":["One step darker, shadows slightly bluish","1段階暗く、影はやや青寄り"],"Aufhellen":["Lighten","明るく"],"Eine Stufe heller, Lichter leicht ins Gelbe":["One step lighter, highlights slightly yellowish","1段階明るく、光はやや黄色寄り"],"Linie":["Line","直線"],"Gerade Linie ziehen":["Draw a straight line","まっすぐな線を引く"],"Rahmen aufziehen":["Drag a frame","枠をドラッグ"],"Ellipse":["Ellipse","楕円"],"Kreis oder Oval aufziehen":["Drag a circle or oval","円や楕円をドラッグ"],"Radierer":["Eraser","消しゴム"],"Symmetrie an":["Symmetry on","対称オン"],"Symmetrie aus":["Symmetry off","対称オフ"],"Das ist die Skelett-Ebene. Tippe oben auf „Zeichnen“.":["This is the skeleton layer. Tap “Draw” at the top.","これはスケルトンレイヤーです。上の「描画」をタップしてください。"],"Stift":["Pencil","ペン"],"Füllen":["Fill","塗りつぶし"],"Pipette – tippe auf eine Farbe":["Eyedropper – tap a color","スポイト – 色をタップ"],"Umfärben – tippe auf eine Farbe der aktiven Ebene":["Recolor – tap a color on the active layer","色の置き換え – アクティブなレイヤーの色をタップ"],"Auswahl":["Select","選択"],"Noch keine":["None yet","まだありません"],"Die Leinwand ist leer":["The canvas is empty","キャンバスは空です"],"Ungültiger Hex-Wert":["Invalid hex value","無効なHEX値"],"Dort ist kein Pixel – tippe auf eine Farbe":["There is no pixel there – tap a color","そこにはピクセルがありません – 色をタップしてください"],"Keine weiteren Farben im Projekt":["No other colors in the project","プロジェクトに他の色はありません"],"Umgefärbt":["Recolored","色を置き換えました"],"Ausblenden":["Hide","非表示"],"Einblenden":["Show","表示"],"Ein Skelett lässt sich nicht duplizieren":["A skeleton can't be duplicated","スケルトンは複製できません"],"Ebene dupliziert":["Layer duplicated","レイヤーを複製しました"],"Eine Ebene muss bleiben":["One layer must remain","レイヤーは1つ以上必要です"],"Ebene gelöscht":["Layer deleted","レイヤーを削除しました"],"Darunter liegt keine Ebene":["There is no layer below","下にレイヤーがありません"],"Skelett-Ebenen lassen sich nicht zusammenfügen":["Skeleton layers can't be merged","スケルトンレイヤーは結合できません"],"Es gibt nur einen Frame. Lege zuerst weitere Frames an.":["There is only one frame. Add more frames first.","フレームが1つしかありません。先にフレームを追加してください。"],"· Aufbau und Pose des Skeletts":["· skeleton rig and pose","· スケルトンの構造とポーズ"],"Die Ebene ist in diesem Frame leer. „Ersetzen“ leert sie in den gewählten Frames.":["The layer is empty in this frame. “Replace” clears it in the selected frames.","このフレームではレイヤーが空です。「置き換え」を選ぶと選んだフレームのレイヤーが空になります。"],"Beim Kopieren":["When copying","コピー方法"],"Ersetzen":["Replace","置き換え"],"Darüberlegen":["Overlay","重ねる"],"Ebene in Frames kopieren":["Copy layer to frames","レイヤーをフレームにコピー"],"Alle":["All","すべて"],"Keine":["None","なし"],"Ab hier bis zum Ende":["From here to the end","ここから最後まで"],"Alle davor":["All before","これより前すべて"],"Jeder zweite":["Every second","1つおき"],"Frames wählen":["Choose frames","フレームを選択"],"Der Inhalt der Ebene in den gewählten Frames wird ersetzt.":["The layer's content in the selected frames is replaced.","選んだフレームのレイヤーの内容が置き換えられます。"],"Die Pixel werden über den vorhandenen Inhalt der Ebene gelegt.":["The pixels are laid over the layer's existing content.","ピクセルがレイヤーの既存の内容の上に重ねられます。"],"Name der Ebene":["Layer name","レイヤー名"],"Inhalt gelöscht":["Content cleared","内容を消去しました"],"In der Auswahl wurden keine Lücken gefunden":["No gaps were found in the selection","選択範囲に隙間は見つかりませんでした"],"Auswahl als neue Ebene dupliziert":["Selection duplicated as a new layer","選択範囲を新規レイヤーとして複製しました"],"Ziehen zum Verschieben, Ecken zum Skalieren. „Einpassen“ verkleinert das Bild auf die Leinwand.":["Drag to move, corners to scale. “Fit” shrinks the image to the canvas.","ドラッグで移動、角で拡大縮小。「フィット」で画像をキャンバスに収めます。"],"Ziehen zum Verschieben, Ecken zum Skalieren. „Fertig“ setzt das Bild ein.":["Drag to move, corners to scale. “Done” places the image.","ドラッグで移動、角で拡大縮小。「完了」で画像を配置します。"],"Bild eingesetzt":["Image placed","画像を配置しました"],"Nur zusammenhängende Fläche":["Contiguous area only","隣接する領域のみ"],"Alle Pixel dieser Farbe im Frame":["All pixels of this color in the frame","フレーム内のこの色のピクセルすべて"],"Gilt nur für diesen Frame":["Applies to this frame only","このフレームのみに適用"],"Pose eingebacken – du zeichnest jetzt auf der verformten Figur":["Pose baked – you are now drawing on the deformed figure","ポーズを焼き込みました – 変形したフィギュアに描いています"],"Arm links oben":["Upper left arm","左上腕"],"Arm links unten":["Lower left arm","左前腕"],"Bein links oben":["Upper left leg","左太もも"],"Bein links unten":["Lower left leg","左すね"],"Hüfte":["Hip","腰"],"Körper":["Body","胴体"],"Kopf":["Head","頭"],"Bein rechts oben":["Upper right leg","右太もも"],"Bein rechts unten":["Lower right leg","右すね"],"Arm rechts oben":["Upper right arm","右上腕"],"Arm rechts unten":["Lower right arm","右前腕"],"Hinterbein fern oben":["Far hind leg upper","奥の後ろ脚（上）"],"Hinterbein fern unten":["Far hind leg lower","奥の後ろ脚（下）"],"Vorderbein fern oben":["Far front leg upper","奥の前脚（上）"],"Vorderbein fern unten":["Far front leg lower","奥の前脚（下）"],"Schwanz":["Tail","しっぽ"],"Hals":["Neck","首"],"Hinterbein nah oben":["Near hind leg upper","手前の後ろ脚（上）"],"Hinterbein nah unten":["Near hind leg lower","手前の後ろ脚（下）"],"Vorderbein nah oben":["Near front leg upper","手前の前脚（上）"],"Vorderbein nah unten":["Near front leg lower","手前の前脚（下）"],"Knochen 1":["Bone 1","ボーン 1"],"Mensch":["Human","人"],"Vierbeiner":["Quadruped","四足動物"],"Kette":["Chain","チェーン"],"Einzelner Knochen":["Single bone","単一ボーン"],"Wähle zuerst die Ebene mit deiner Figur":["First choose the layer with your figure","先にフィギュアのレイヤーを選んでください"],"Skelett hinzufügen":["Add skeleton","スケルトンを追加"],"Hüfte, Körper, Kopf, Arme und Beine mit je zwei Gliedern":["Hip, body, head, arms and legs with two segments each","腰・胴体・頭、腕と脚はそれぞれ2節"],"Seitenansicht mit Kopf rechts: Körper, Hals, Kopf, Schwanz, vier Beine":["Side view, head on the right: body, neck, head, tail, four legs","側面図・頭は右：胴体・首・頭・しっぽ・4本の脚"],"Fünf Glieder hintereinander: Schwanz, Schlange, Tentakel, Seil, Pflanze":["Five segments in a row: tail, snake, tentacle, rope, plant","5つの節が連なる：しっぽ・ヘビ・触手・ロープ・植物"],"Leerer Start: Knochen frei auf die Figur ziehen":["Empty start: drag bones freely onto the figure","空から開始：ボーンを自由にフィギュアへドラッグ"],"Skelett":["Skeleton","スケルトン"],"Ziehe auf einem freien Bereich, um weitere Knochen anzulegen":["Drag on an empty area to add more bones","空いている場所をドラッグしてボーンを追加"],"Skelett hinzugefügt: Ziehe die Gelenke an die richtigen Stellen deiner Figur":["Skeleton added: drag the joints to the right places on your figure","スケルトンを追加しました：関節をフィギュアの正しい位置にドラッグしてください"],"Das Skelett ist ausgeblendet":["The skeleton is hidden","スケルトンは非表示です"],"Wähle zuerst einen Knochen":["First choose a bone","先にボーンを選んでください"],"Knochen":["Bones","ボーン"],"Knochen angelegt":["Bone added","ボーンを作成しました"],"Du zeichnest auf der Figur":["You are drawing on the figure","フィギュアに描いています"],"Gelenke ziehen · auf freiem Bereich ziehen = neuer Knochen":["Drag joints · drag on empty area = new bone","関節をドラッグ · 空き場所をドラッグ = 新しいボーン"],"Knochenende ziehen = drehen · Wurzelknochen ziehen = bewegen":["Drag bone end = rotate · drag root bone = move","ボーンの先端をドラッグ = 回転 · ルートボーンをドラッグ = 移動"],"Unter dem Skelett liegt keine Ebene zum Zeichnen":["There is no layer to draw on below the skeleton","スケルトンの下に描画できるレイヤーがありません"],"Gelenke füllen an: Lücken an geknickten Gelenken werden geschlossen":["Fill joints on: gaps at bent joints are closed","関節を埋める オン：曲がった関節の隙間を埋めます"],"Gelenke füllen aus: Teile bewegen sich ganz starr":["Fill joints off: parts move completely rigid","関節を埋める オフ：パーツは完全に固定して動きます"],"IK an: Hand oder Fuß ziehen, Ellbogen und Knie folgen":["IK on: drag hand or foot, elbows and knees follow","IK オン：手や足をドラッグすると肘と膝が追従"],"IK aus: jeder Knochen dreht einzeln":["IK off: each bone rotates on its own","IK オフ：ボーンを1本ずつ回転"],"Pose zurückgesetzt":["Pose reset","ポーズをリセットしました"],"Die Pose ist schon die Ruhelage":["The pose is already the rest pose","ポーズはすでに基本姿勢です"],"Pose eingebacken":["Pose baked","ポーズを焼き込みました"],"Zuordnung automatisch nach nächstem Knochen":["Assigned automatically by nearest bone","最も近いボーンで自動割り当てしました"],"Aufbau auf alle Frames übertragen":["Rig copied to all frames","構造を全フレームに適用しました"],"Knochen angefügt – zieh sein Ende an die richtige Stelle":["Bone added – drag its end to the right place","ボーンを追加しました – 先端を正しい位置にドラッグしてください"],"Knochen umbenennen":["Rename bone","ボーン名を変更"],"Name":["Name","名前"],"Speichern":["Save","保存"],"Knallig":["Vivid","鮮やか"],"Neon-Nacht":["Neon night","ネオンナイト"],"Abendglut":["Sunset glow","夕焼け"],"Cyber":["Cyber","サイバー"],"Spielhalle":["Arcade","アーケード"],"Tropenfieber":["Tropical fever","トロピカル"],"Gift":["Toxic","毒"],"Glutkern":["Ember","残り火"],"Gletscher":["Glacier","氷河"],"Gedämpft":["Muted","落ち着いた"],"Nebelwald":["Misty forest","霧の森"],"Staub":["Dust","砂ぼこり"],"Schiefer":["Slate","スレート"],"Meeresdunst":["Sea haze","海霧"],"Herbstlaub":["Autumn leaves","紅葉"],"Rosé":["Rosé","ロゼ"],"Pastell":["Pastel","パステル"],"Moor":["Moor","湿原"],"Graustufen":["Grayscale","グレースケール"],"Eigene":["Custom","カスタム"],"Neue Palette":["New palette","新規パレット"],"· fest":["· built-in","· 固定"],"Aktuelle Farbe hinzufügen":["Add current color","現在の色を追加"],"Noch leer. Wähle eine Farbe und tippe auf +.":["Still empty. Choose a color and tap +.","まだ空です。色を選んで + をタップしてください。"],"Nach Helligkeit sortieren":["Sort by brightness","明るさ順に並べ替え"],"Kopie anlegen":["Make a copy","コピーを作成"],"Palette löschen":["Delete palette","パレットを削除"],"Als eigene Palette kopieren":["Copy as custom palette","カスタムパレットとしてコピー"],"Beginnen mit":["Start with","開始時の内容"],"Leer":["Empty","空"],"Farben selbst hinzufügen: Farbe wählen, dann auf + tippen":["Add colors yourself: choose a color, then tap +","色を自分で追加：色を選んで + をタップ"],"Eine Palette hat höchstens 64 Farben":["A palette has at most 64 colors","パレットは最大64色です"],"Diese Farbe ist schon in der Palette":["This color is already in the palette","この色はすでにパレットにあります"],"Palette umbenennen":["Rename palette","パレット名を変更"],"Palette löschen?":["Delete palette?","パレットを削除しますか？"],"Wähle eine Ebene mit Pixeln":["Choose a layer with pixels","ピクセルのあるレイヤーを選んでください"],"Farben anpassen":["Adjust colors","色の調整"],"Vorher":["Before","変更前"],"Nachher":["After","変更後"],"Farbe & Licht":["Color & light","色と明るさ"],"Verlauf":["Gradient","グラデーション"],"Palette":["Palette","パレット"],"Farbton":["Hue","色相"],"Sättigung":["Saturation","彩度"],"Helligkeit":["Brightness","明るさ"],"Kontrast":["Contrast","コントラスト"],"Temperatur":["Temperature","色温度"],"Invertieren":["Invert","反転"],"Werte zurücksetzen":["Reset values","値をリセット"],"Verlauf · tippe eine Farbe zum Ändern":["Gradient · tap a color to change it","グラデーション · 色をタップして変更"],"Farbe hinzufügen":["Add color","色を追加"],"Farbe entfernen":["Remove color","色を削除"],"Stärke":["Strength","強さ"],"In Stufen (scharfe Pixel-Farben)":["In steps (crisp pixel colors)","段階的（くっきりしたドット色）"],"Auf ganzen Verlauf dehnen":["Stretch to the whole gradient","グラデーション全体に広げる"],"Anwenden auf":["Apply to","適用先"],"Aktive Ebene":["Active layer","アクティブなレイヤー"],"Alle Ebenen":["All layers","全レイヤー"],"Nur in der Auswahl":["Only in the selection","選択範囲内のみ"],"Anwenden":["Apply","適用"],"Hier gibt es keine Pixel zum Umsetzen":["There are no pixels to convert here","変換するピクセルがありません"],"Verändert Farbton, Sättigung, Helligkeit und mehr. Jede Farbe wird genau einer neuen Farbe zugeordnet – die Anzahl der Farben bleibt gleich.":["Changes hue, saturation, brightness and more. Each color maps to exactly one new color – the number of colors stays the same.","色相・彩度・明るさなどを変更します。各色はちょうど1つの新しい色に対応するため、色数は変わりません。"],"Ersetzt jede Farbe anhand ihrer Helligkeit durch eine Farbe aus dem Verlauf – wie die Verlaufsumsetzung in Procreate.":["Replaces each color by its brightness with a color from the gradient – like the gradient map in Procreate.","各色を明るさに応じてグラデーションの色に置き換えます（Procreateのグラデーションマップと同様）。"],"Ersetzt jede Farbe durch die ähnlichste Farbe der Palette.":["Replaces each color with the closest color in the palette.","各色をパレットの最も近い色に置き換えます。"],"Verlauf · dunkel nach hell · tippe eine Farbe zum Ändern":["Gradient · dark to light · tap a color to change it","グラデーション · 暗→明 · 色をタップして変更"],"Palettenfarben · tippe eine Farbe zum Ändern":["Palette colors · tap a color to change it","パレットの色 · 色をタップして変更"],"Farben angepasst":["Colors adjusted","色を調整しました"],"Verlauf umgesetzt":["Gradient map applied","グラデーションマップを適用しました"],"Auf Palette umgefärbt":["Recolored to palette","パレットに合わせて色変換しました"],"Frame dupliziert":["Frame duplicated","フレームを複製しました"],"Neuer Frame":["New frame","新しいフレーム"],"Ein Frame muss bleiben":["One frame must remain","フレームは1つ以上必要です"],"Frame gelöscht":["Frame deleted","フレームを削除しました"],"Für eine Animation brauchst du mindestens zwei Frames":["An animation needs at least two frames","アニメーションには2フレーム以上必要です"],"Anhalten":["Pause","停止"],"Zwiebelschicht an":["Onion skin on","オニオンスキン オン"],"Zwiebelschicht aus":["Onion skin off","オニオンスキン オフ"],"Öffnet sich in einem neuen Tab.":["Opens in a new tab.","新しいタブで開きます。"],"Breite (px)":["Width (px)","幅 (px)"],"Höhe (px)":["Height (px)","高さ (px)"],"Erstellen":["Create","作成"],"Ebene 1":["Layer 1","レイヤー 1"],"Anker":["Anchor","基準点"],"Leinwand anpassen":["Canvas size","キャンバスサイズ"],"Zuschneiden & erweitern":["Crop & extend","切り抜き・拡張"],"Inhalt skalieren":["Scale content","内容を拡大縮小"],"Seitenverhältnis sperren":["Lock aspect ratio","縦横比を固定"],"Auf Inhalt zuschneiden":["Crop to content","内容に合わせて切り抜き"],"Quadratisch":["Square","正方形"],"· Pixel werden vergrößert (ohne Unschärfe)":["· pixels are enlarged (without blur)","· ピクセルを拡大（ぼかしなし）"],"· Pixel werden verkleinert (ohne Unschärfe)":["· pixels are reduced (without blur)","· ピクセルを縮小（ぼかしなし）"],"Tipp: Bei ganzzahligen Faktoren (×2, ×3, ×½) bleiben alle Pixel gleich groß.":["Tip: with whole-number factors (×2, ×3, ×½) all pixels stay the same size.","ヒント：整数倍（×2、×3、×½）ならすべてのピクセルが同じ大きさのままです。"],"· Pixel außerhalb des Rahmens werden in allen Frames abgeschnitten":["· pixels outside the frame are cut off in all frames","· 枠の外のピクセルは全フレームで切り取られます"],"Größer als 512 px geht nicht":["Larger than 512 px isn't possible","512 pxより大きくはできません"],"kein GIF":["not a GIF","GIFではありません"],"keine Frames":["no frames","フレームがありません"],"kein PNG":["not a PNG","PNGではありません"],"nicht unterstützt":["not supported","サポートされていません"],"Das Bild konnte nicht gelesen werden":["The image could not be read","画像を読み込めませんでした"],"Import":["Import","読み込み"],"GIF importieren":["Import GIF","GIFを読み込む"],"Spritesheet importieren":["Import sprite sheet","スプライトシートを読み込む"],"Eine Spalte weniger":["One column less","列を1つ減らす"],"Eine Spalte mehr":["One column more","列を1つ増やす"],"Eine Zeile weniger":["One row less","行を1つ減らす"],"Eine Zeile mehr":["One row more","行を1つ増やす"],"Spalten":["Columns","列"],"Zeilen":["Rows","行"],"Leere Frames überspringen":["Skip empty frames","空のフレームをスキップ"],"Importieren als":["Import as","読み込み方法"],"Frames anhängen":["Append frames","フレームを追加"],"Importieren":["Import","読み込む"],"Öffnet einen neuen Tab.":["Opens a new tab.","新しいタブを開きます。"],"Erhöhe Spalten oder Zeilen.":["Increase columns or rows.","列か行を増やしてください。"],"Erhöhe Spalten oder Zeilen oder importiere als neue Ebene.":["Increase columns or rows, or import as a new layer.","列か行を増やすか、新規レイヤーとして読み込んでください。"],"Keine Frames gefunden":["No frames found","フレームが見つかりません"],"Wähle ein Video, ein GIF oder mehrere Bilder":["Choose a video, a GIF or several images","動画・GIF・複数の画像を選んでください"],"Bilder werden geladen …":["Loading images …","画像を読み込み中…"],"Die Bilder konnten nicht gelesen werden":["The images could not be read","画像を読み込めませんでした"],"Das Video lässt sich hier nicht öffnen":["The video can't be opened here","この動画はここでは開けません"],"Bild":["Image","画像"],"Bilder":["Images","画像"],"· gekürzt, weil sehr groß":["· shortened because very large","· 大きすぎるため短縮"],"Jedes zweite":["Every second","1つおき"],"Jedes dritte":["Every third","2つおき"],"Ein Bild zurück":["One image back","1枚戻る"],"Ein Bild vor":["One image forward","1枚進む"],"Frame hier setzen":["Set frame here","ここにフレームを設定"],"Frame entfernen":["Remove frame","フレームを削除"],"Anzahl":["Count","数"],"Gleichmäßig verteilen":["Distribute evenly","均等に配置"],"Tippe auf die Leiste, um zu suchen. Frames lassen sich ziehen.":["Tap the bar to scrub. Frames can be dragged.","バーをタップして移動。フレームはドラッグできます。"],"Video oder Bilder pixeln":["Pixelate video or images","動画・画像をドット化"],"Wird berechnet …":["Calculating …","計算中…"],"Höhe":["Height","高さ"],"Farben":["Colors","色"],"Hintergrund entfernen":["Remove background","背景を削除"],"Toleranz":["Tolerance","許容値"],"Auf die Figur zuschneiden":["Crop to the figure","フィギュアに合わせて切り抜き"],"Einzelne Pixel aufräumen":["Clean up stray pixels","孤立したピクセルを整理"],"Flackern dämpfen":["Reduce flicker","ちらつきを抑える"],"Dithering":["Dithering","ディザリング"],"Außenlinie":["Outline","アウトライン"],"Das hat nicht geklappt. Versuche andere Frames.":["That didn't work. Try other frames.","うまくいきませんでした。別のフレームを試してください。"],"Setze mindestens einen Frame.":["Set at least one frame.","少なくとも1つフレームを設定してください。"],"Wähle mindestens ein Bild.":["Choose at least one image.","少なくとも1枚画像を選んでください。"],"Nichts gefunden. Senke die Toleranz oder schalte „Hintergrund entfernen“ aus.":["Nothing found. Lower the tolerance or turn off “Remove background”.","何も見つかりません。許容値を下げるか「背景を削除」をオフにしてください。"],"Als GIF exportieren":["Export as GIF","GIFで書き出す"],"Spritesheet exportieren":["Export sprite sheet","スプライトシートを書き出す"],"Vorschau des Spritesheets":["Sprite sheet preview","スプライトシートのプレビュー"],"Anordnung":["Layout","配置"],"Eine Zeile":["One row","1行"],"Raster":["Grid","グリッド"],"Eine Spalte":["One column","1列"],"Spalten im Raster":["Columns in grid","グリッドの列数"],"Skalierung":["Scale","拡大率"],"Dateiname":["File name","ファイル名"],"Nur aktuellen Frame":["Current frame only","現在のフレームのみ"],"Als GIF speichern":["Save as GIF","GIFとして保存"],"Spritesheet speichern":["Save sprite sheet","スプライトシートを保存"],"unter":["under","の"],"Zu groß zum Speichern.":["Too large to save.","大きすぎて保存できません。"],"Wähle eine kleinere Skalierung.":["Choose a smaller scale.","小さい拡大率を選んでください。"],"Achtung:":["Note:","注意:"],"Godot lädt Texturen nur bis 16384 px Kantenlänge. Wähle „Raster“.":["Godot only loads textures up to 16384 px per side. Choose “Grid”.","Godotが読み込めるテクスチャは1辺16384 pxまでです。「グリッド」を選んでください。"],"Zu groß – wähle eine kleinere Skalierung":["Too large – choose a smaller scale","大きすぎます – 小さい拡大率を選んでください"],"Spritesheet wird erstellt …":["Creating sprite sheet …","スプライトシートを作成中…"],"Zu groß für ein GIF – wähle eine kleinere Skalierung":["Too large for a GIF – choose a smaller scale","GIFには大きすぎます – 小さい拡大率を選んでください"],"GIF wird erstellt …":["Creating GIF …","GIFを作成中…"],"Ein GIF hat höchstens 255 Farben – die Farben wurden reduziert":["A GIF has at most 255 colors – the colors were reduced","GIFは最大255色です – 色数を減らしました"],"Gespeichert":["Saved","保存しました"],"Bitte kurz warten und noch einmal versuchen":["Please wait a moment and try again","少し待ってからもう一度お試しください"],"Speichern hat nicht geklappt":["Saving didn't work","保存できませんでした"],"Projekt":["Project","プロジェクト"],"Projekt in neuem Tab geöffnet":["Project opened in a new tab","プロジェクトを新しいタブで開きました"],"Diese Datei ist kein Pixelwerk-Projekt":["This file isn't a Pixelwerk project","このファイルはPixelwerkのプロジェクトではありません"],"Unbenannt":["Untitled","無題"],"Änderungen sichern?":["Save changes?","変更を保存しますか？"],"geändert. Wenn du den Tab schließt, ist dieser Stand weg.":["– if you close the tab, this state is lost.","以降に変更されています。タブを閉じるとこの状態は失われます。"],"Nicht speichern":["Don't save","保存しない"],"Nicht gespeichert – der Tab bleibt offen":["Not saved – the tab stays open","保存されていません – タブは開いたままです"],"nicht als Datei gespeichert":["not saved as a file","ファイルに保存されていません"],"Tab schließen":["Close tab","タブを閉じる"],"Schatten":["Shadow","影"],"Schleim":["Slime","スライム"],"Beispiel":["Sample","サンプル"],"Beispiel mit zwei Ebenen: Tippe oben rechts auf das Ebenen-Symbol":["Sample with two layers: tap the layers icon at the top right","2つのレイヤーのサンプル：右上のレイヤーアイコンをタップしてください"],"Sprache":["Language","言語"],"kein IndexedDB":["no IndexedDB","IndexedDBがありません"]},"p":[["Die Ebene „{0}“ ist ausgeblendet","The layer “{0}” is hidden","レイヤー「{0}」は非表示です"],["Auf der Ebene „{0}“ ist dort kein Pixel","There is no pixel there on the layer “{0}”","レイヤー「{0}」のそこにはピクセルがありません"],["Diese Farbe kommt auf der Ebene „{0}“ nicht vor","This color does not appear on the layer “{0}”","この色はレイヤー「{0}」にありません"],["#{0} · {1} Pixel in {2} Frames · {3}","#{0} · {1} pixels in {2} frames · {3}","#{0} · {2} フレームで {1} ピクセル · {3}"],["#{0} · {1} Pixel in {2} Frame · {3}","#{0} · {1} pixels in {2} frame · {3}","#{0} · {2} フレームで {1} ピクセル · {3}"],["#{0} · {1} Pixel in diesem Frame · {2}","#{0} · {1} pixels in this frame · {2}","#{0} · このフレームで {1} ピクセル · {2}"],["{0} Kopie","{0} copy","{0} のコピー"],["Ebene {0}","Layer {0}","レイヤー {0}"],["Mit „{0}“ zusammengefügt","Merged with “{0}”","「{0}」と結合しました"],["Neuer Frame {0} mit der Ebene „{1}“","New frame {0} with the layer “{1}”","レイヤー「{1}」で新しいフレーム {0}"],["Ebene „{0}“ in Frame {1} kopiert","Layer “{0}” copied to frame {1}","レイヤー「{0}」をフレーム {1} にコピーしました"],["„{0}“ aus Frame {1}","“{0}” from frame {1}","フレーム {1} の「{0}」"],["„{0}“ aus Frame {1} · Aufbau und Pose des Skeletts","“{0}” from frame {1} · skeleton rig and pose","フレーム {1} の「{0}」 · スケルトンの構造とポーズ"],["Frame {0}, Quelle","Frame {0}, source","フレーム {0}（コピー元）"],["Frame {0}","Frame {0}","フレーム {0}"],["{0} · Quelle","{0} · source","{0} · コピー元"],["In {0} Frames kopieren","Copy to {0} frames","{0} フレームにコピー"],["In {0} Frame kopieren","Copy to {0} frame","{0} フレームにコピー"],["Ebene „{0}“ in {1} Frames kopiert","Layer “{0}” copied to {1} frames","レイヤー「{0}」を {1} フレームにコピーしました"],["Ebene „{0}“ in {1} Frame kopiert","Layer “{0}” copied to {1} frame","レイヤー「{0}」を {1} フレームにコピーしました"],["Die Auswahl ist auf der Ebene „{0}“ leer","The selection is empty on the layer “{0}”","レイヤー「{0}」の選択範囲は空です"],["Die Ebene „{0}“ ist hier leer","The layer “{0}” is empty here","レイヤー「{0}」はここでは空です"],["{0} Lücken gefüllt","{0} gaps filled","{0} 個の隙間を埋めました"],["{0} Lücke gefüllt","{0} gap filled","{0} 個の隙間を埋めました"],["In Frame {0} kopiert","Copied to frame {0}","フレーム {0} にコピーしました"],["Neuer Frame {0} mit der Auswahl","New frame {0} with the selection","選択範囲で新しいフレーム {0}"],["Bild in {0} Frames eingesetzt","Image placed in {0} frames","画像を {0} フレームに配置しました"],["In {0} Frames transformiert","Transformed in {0} frames","{0} フレームで変形しました"],["„Fertig“ wendet die Änderung auf alle {0} Frames der Ebene an","“Done” applies the change to all {0} frames of the layer","「完了」でレイヤーの全 {0} フレームに適用します"],["Glied {0}","Segment {0}","節 {0}"],["Die Ebene „{0}“ hat schon ein Skelett","The layer “{0}” already has a skeleton","レイヤー「{0}」にはすでにスケルトンがあります"],["Für die Ebene „{0}“. Die Vorlage wird an deine Figur angepasst.","For the layer “{0}”. The template is fitted to your figure.","レイヤー「{0}」用。テンプレートはフィギュアに合わせて調整されます。"],["Skelett {0}","Skeleton {0}","スケルトン {0}"],["Knochen {0}","Bone {0}","ボーン {0}"],["Pinsel weist Pixel „{0}“ zu","Brush assigns pixels to “{0}”","ブラシでピクセルを「{0}」に割り当て"],["Knochen: {0}","Bone: {0}","ボーン: {0}"],["Knochen „{0}“ gelöscht","Bone “{0}” deleted","ボーン「{0}」を削除しました"],["{0} Farben, nach Helligkeit sortiert","{0} colors, sorted by brightness","{0} 色、明るさ順"],["{0} Farben","{0} colors","{0} 色"],["{0} Farbe","{0} color","{0} 色"],["Eigene {0}","Custom {0}","カスタム {0}"],["Palette „{0}“ mit {1} Farben angelegt","Palette “{0}” created with {1} colors","パレット「{0}」を {1} 色で作成しました"],["Palette „{0}“ angelegt – wähle eine Farbe und tippe auf +","Palette “{0}” created – choose a color and tap +","パレット「{0}」を作成しました – 色を選んで + をタップしてください"],["#{0} hinzugefügt","#{0} added","#{0} を追加しました"],["„{0}“ angelegt – jetzt bearbeitbar","“{0}” created – now editable","「{0}」を作成しました – 編集できます"],["„{0}“ mit {1} Farben wird gelöscht. Das lässt sich nicht rückgängig machen.","“{0}” with {1} colors will be deleted. This can't be undone.","{1} 色の「{0}」を削除します。元に戻せません。"],["Palette „{0}“ gelöscht","Palette “{0}” deleted","パレット「{0}」を削除しました"],["Betrifft {0} Ebenen in {1} Frames","Affects {0} layers in {1} frames","{0} レイヤー・{1} フレームが対象"],["Betrifft {0} Ebene in {1} Frames","Affects {0} layer in {1} frames","{0} レイヤー・{1} フレームが対象"],["Betrifft {0} Ebenen in {1} Frame","Affects {0} layers in {1} frame","{0} レイヤー・{1} フレームが対象"],["Betrifft {0} Ebene in {1} Frame","Affects {0} layer in {1} frame","{0} レイヤー・{1} フレームが対象"],["Farbe {0}","Color {0}","色 {0}"],["+{0} warm","+{0} warm","+{0} 暖かい"],["{0} kalt","{0} cool","{0} 冷たい"],["Frame {0} von {1}","Frame {0} of {1}","フレーム {0} / {1}"],["{0}×{1} px · Frame {2} von {3} · {4}","{0}×{1} px · Frame {2} of {3} · {4}","{0}×{1} px · フレーム {2} / {3} · {4}"],["Die Ebene „{0}“ ist in diesem Frame leer","The layer “{0}” is empty in this frame","レイヤー「{0}」はこのフレームでは空です"],["Neues Projekt {0}×{1}","New project {0}×{1}","新規プロジェクト {0}×{1}"],["Gilt für alle {0} Frames und alle Ebenen","Applies to all {0} frames and all layers","全 {0} フレームと全レイヤーに適用"],["Gilt für alle {0} Frame und alle Ebenen","Applies to all {0} frame and all layers","全 {0} フレームと全レイヤーに適用"],["{0}×{1} px →","{0}×{1} px →","{0}×{1} px →"],["{0}×{1} px · Ziehe am Rahmen oder gib eine Größe ein","{0}×{1} px · Drag the frame or enter a size","{0}×{1} px · 枠をドラッグするかサイズを入力"],["Leinwand jetzt {0}×{1} px","Canvas now {0}×{1} px","キャンバスは {0}×{1} px になりました"],["Das GIF ist sehr groß: {0} von {1} Frames werden verwendet.","The GIF is very large: {0} of {1} frames are used.","GIFが非常に大きいため、{1} フレーム中 {0} フレームを使用します。"],["{0} Frames · {1} fps","{0} frames · {1} fps","{0} フレーム · {1} fps"],["Legt die Frames ab dem aktuellen Frame als neue Ebene „{0}“ über die aktive Ebene.","Places the frames, starting at the current frame, as a new layer “{0}” above the active layer.","現在のフレームから、フレームを新規レイヤー「{0}」としてアクティブなレイヤーの上に配置します。"],["Legt das Bild in den aktuellen Frame als neue Ebene „{0}“ über die aktive Ebene.","Places the image in the current frame as a new layer “{0}” above the active layer.","画像を現在のフレームに新規レイヤー「{0}」としてアクティブなレイヤーの上に配置します。"],["Legt die Frames ab dem aktuellen Frame als neue Ebene „{0}“ über die aktive Ebene. Danach liegt es mittig auf der Leinwand und du kannst es verschieben, skalieren und drehen. Was über den Rand ragt, wird beim Bestätigen abgeschnitten. Die Anpassung gilt für alle Frames.","Places the frames, starting at the current frame, as a new layer “{0}” above the active layer. It then sits centered on the canvas and you can move, scale and rotate it. Anything sticking out over the edge is cut off when you confirm. The adjustment applies to all frames.","現在のフレームから、フレームを新規レイヤー「{0}」としてアクティブなレイヤーの上に配置します。その後キャンバス中央に置かれ、移動・拡大縮小・回転できます。はみ出した部分は確定時に切り取られます。調整は全フレームに適用されます。"],["Legt das Bild in den aktuellen Frame als neue Ebene „{0}“ über die aktive Ebene. Danach liegt es mittig auf der Leinwand und du kannst es verschieben, skalieren und drehen. Was über den Rand ragt, wird beim Bestätigen abgeschnitten.","Places the image in the current frame as a new layer “{0}” above the active layer. It then sits centered on the canvas and you can move, scale and rotate it. Anything sticking out over the edge is cut off when you confirm.","画像を現在のフレームに新規レイヤー「{0}」としてアクティブなレイヤーの上に配置します。その後キャンバス中央に置かれ、移動・拡大縮小・回転できます。はみ出した部分は確定時に切り取られます。"],["Hängt die Frames hinten an, auf der Ebene „{0}“.","Appends the frames at the end, on the layer “{0}”.","レイヤー「{0}」で、フレームを末尾に追加します。"],["Öffnet einen neuen Tab. Frames anhängen geht nur, wenn die Frames so groß sind wie das Projekt ({0}×{1} px).","Opens a new tab. Appending frames only works if the frames are the same size as the project ({0}×{1} px).","新しいタブを開きます。フレームの追加は、フレームがプロジェクトと同じサイズ（{0}×{1} px）の場合のみ可能です。"],["à {0}×{1} px","of {0}×{1} px each","（各 {0}×{1} px）"],["{0} leere werden übersprungen","{0} empty ones are skipped","空のフレーム {0} 個をスキップ"],["{0} leere wird übersprungen","{0} empty one is skipped","空のフレーム {0} 個をスキップ"],["Das Bild lässt sich nicht genau teilen: {0} px rechts und {1} px unten fallen weg","The image can't be split evenly: {0} px on the right and {1} px at the bottom are dropped","画像をちょうど分割できません：右の {0} px と下の {1} px が切り捨てられます"],["Frames dürfen als Ebene höchstens {0} px groß sein.","As a layer, frames may be at most {0} px.","レイヤーとして読み込むフレームは最大 {0} px です。"],["Frames dürfen für ein neues Projekt höchstens {0} px groß sein.","For a new project, frames may be at most {0} px.","新規プロジェクトのフレームは最大 {0} px です。"],["{0} Frames als neue Ebene importiert","{0} frames imported as a new layer","{0} フレームを新規レイヤーとして読み込みました"],["{0} Frame als neue Ebene importiert","{0} frame imported as a new layer","{0} フレームを新規レイヤーとして読み込みました"],["{0} Frames importiert","{0} frames imported","{0} フレームを読み込みました"],["{0} Frame importiert","{0} frame imported","{0} フレームを読み込みました"],["Bild {0}","Image {0}","画像 {0}"],["{0} von {1} gewählt","{0} of {1} selected","{1} 中 {0} を選択"],["{0} von {1} gewählt · höchstens 64 werden verwendet","{0} of {1} selected · at most 64 are used","{1} 中 {0} を選択 · 最大64枚を使用"],["Legt die Frames ab dem aktuellen Frame als neue Ebene „{0}“ ins aktuelle Projekt.","Places the frames, starting at the current frame, as a new layer “{0}” in the current project.","現在のフレームから、フレームを新規レイヤー「{0}」として現在のプロジェクトに配置します。"],["Legt die Frames ab dem aktuellen Frame als neue Ebene „{0}“ ins aktuelle Projekt. Danach liegen sie mittig auf der Leinwand und du kannst sie verschieben, skalieren und drehen. Die Anpassung gilt für alle Frames.","Places the frames, starting at the current frame, as a new layer “{0}” in the current project. They then sit centered on the canvas and you can move, scale and rotate them. The adjustment applies to all frames.","現在のフレームから、フレームを新規レイヤー「{0}」として現在のプロジェクトに配置します。その後キャンバス中央に置かれ、移動・拡大縮小・回転できます。調整は全フレームに適用されます。"],["{0}×{1} px · {2} Frames · {3} Farben + Linie","{0}×{1} px · {2} frames · {3} colors + line","{0}×{1} px · {2} フレーム · {3} 色＋線"],["{0}×{1} px · {2} Frame · {3} Farben + Linie","{0}×{1} px · {2} frame · {3} colors + line","{0}×{1} px · {2} フレーム · {3} 色＋線"],["{0}×{1} px · {2} Frames · {3} Farben","{0}×{1} px · {2} frames · {3} colors","{0}×{1} px · {2} フレーム · {3} 色"],["{0}×{1} px · {2} Frame · {3} Farben","{0}×{1} px · {2} frame · {3} colors","{0}×{1} px · {2} フレーム · {3} 色"],["{0} Frames mit {1} Farben importiert","{0} frames imported with {1} colors","{0} フレームを {1} 色で読み込みました"],["{0} Frame mit {1} Farben importiert","{0} frame imported with {1} colors","{0} フレームを {1} 色で読み込みました"],["{0} sichtbare Ebenen werden zusammengefügt.","{0} visible layers are merged.","表示中の {0} レイヤーを結合します。"],["{0} sichtbare Ebene wird zusammengefügt.","{0} visible layer is used.","表示中の {0} レイヤーを使用します。"],["{0} sichtbare Ebenen werden zusammengefügt. {1} ausgeblendete Ebenen bleiben weg.","{0} visible layers are merged. {1} hidden layers are left out.","表示中の {0} レイヤーを結合します。非表示の {1} レイヤーは含まれません。"],["{0} sichtbare Ebenen werden zusammengefügt. {1} ausgeblendete Ebene bleibt weg.","{0} visible layers are merged. {1} hidden layer is left out.","表示中の {0} レイヤーを結合します。非表示の {1} レイヤーは含まれません。"],["{0} sichtbare Ebene wird zusammengefügt. {1} ausgeblendete Ebenen bleiben weg.","{0} visible layer is used. {1} hidden layers are left out.","表示中の {0} レイヤーを使用します。非表示の {1} レイヤーは含まれません。"],["{0} sichtbare Ebene wird zusammengefügt. {1} ausgeblendete Ebene bleibt weg.","{0} visible layer is used. {1} hidden layer is left out.","表示中の {0} レイヤーを使用します。非表示の {1} レイヤーは含まれません。"],["{0} Frames à {1}×{2} px","{0} frames of {1}×{2} px","{0} フレーム（各 {1}×{2} px）"],["{0} Frame à {1}×{2} px","{0} frame of {1}×{2} px","{0} フレーム（{1}×{2} px）"],["GIF: {0}×{1} px · {2} Frames · {3} fps · Endlosschleife","GIF: {0}×{1} px · {2} frames · {3} fps · endless loop","GIF: {0}×{1} px · {2} フレーム · {3} fps · 無限ループ"],["{0}×{1} px. In Godot beim","{0}×{1} px. In Godot, on the","{0}×{1} px。Godotでは"],["Unbenannt {0}","Untitled {0}","無題 {0}"],["„{0}“ konnte nicht geladen werden und wurde leer angelegt","“{0}” could not be loaded and was created empty","「{0}」を読み込めなかったため、空で作成しました"],["„{0}“ geschlossen","“{0}” closed","「{0}」を閉じました"],["„{0}“ wurde seit dem letzten","“{0}” has changed since the last","「{0}」は前回の"],["{0} – nicht als Datei gespeichert","{0} – not saved as a file","{0} – ファイルに保存されていません"],["{0} Frames","{0} frames","{0} フレーム"],["{0} Frame","{0} frame","{0} フレーム"],["{0} · fest","{0} · built-in","{0} · 固定"],["{0} Bilder · {1}","{0} images · {1}","{0} 枚の画像 · {1}"],["{0} Bild · {1}","{0} image · {1}","{0} 枚の画像 · {1}"],["{0} Bilder · {1} · gekürzt, weil sehr groß","{0} images · {1} · shortened because very large","{0} 枚の画像 · {1} · 大きすぎるため短縮"]]};
+const I18N = {"x":{"Aktionen":["Actions","アクション"],"Anpassungen":["Adjustments","調整"],"Auswahl (S)":["Select (S)","選択 (S)"],"Transformieren (T)":["Transform (T)","変形 (T)"],"Stift (B)":["Pencil (B)","ペン (B)"],"Füllen (G)":["Fill (G)","塗りつぶし (G)"],"Radierer (E)":["Eraser (E)","消しゴム (E)"],"Ebenen (L)":["Layers (L)","レイヤー (L)"],"Farbe wählen":["Choose color","色を選択"],"Offene Projekte":["Open projects","開いているプロジェクト"],"Neues Projekt":["New project","新規プロジェクト"],"Zeichenfläche":["Canvas","キャンバス"],"Pinselgröße":["Brush size","ブラシサイズ"],"Pipette (I)":["Eyedropper (I)","スポイト (I)"],"Pipette (I) – oder Finger gedrückt halten":["Eyedropper (I) – or press and hold a finger","スポイト (I) – または指で長押し"],"Rückgängig":["Undo","取り消し"],"Rückgängig (Strg+Z)":["Undo (Ctrl+Z)","取り消し (Ctrl+Z)"],"Wiederholen":["Redo","やり直し"],"Wiederholen (Strg+Umschalt+Z)":["Redo (Ctrl+Shift+Z)","やり直し (Ctrl+Shift+Z)"],"Zurück zur Figur":["Back to the figure","フィギュアに戻る"],"Skelett bearbeiten":["Edit skeleton","スケルトンを編集"],"90 Grad nach links drehen":["Rotate 90° left","左に90°回転"],"90 Grad nach rechts drehen":["Rotate 90° right","右に90°回転"],"Aktuelle Farbe":["Current color","現在の色"],"Vorherige Farbe":["Previous color","前の色"],"Vorherige Farbe wählen":["Choose previous color","前の色を選択"],"Hex-Farbwert":["Hex color value","HEXカラー値"],"Nach links":["Move left","左へ"],"Nach rechts":["Move right","右へ"],"Langsamer":["Slower","遅く"],"Schneller":["Faster","速く"],"Neue Farbe als Hex":["New color as hex","新しい色（HEX）"],"Neue Ebene":["New layer","新規レイヤー"],"Abspielen":["Play","再生"],"Abspielen (Enter)":["Play (Enter)","再生 (Enter)"],"Bildrate und Zwiebelschicht":["Frame rate and onion skin","フレームレートとオニオンスキン"],"Neuer leerer Frame":["New empty frame","新しい空のフレーム"],"Aufbauen":["Rig","組み立て"],"Animieren":["Animate","アニメート"],"Knochen anfügen":["Add bone","ボーンを追加"],"Knochen löschen":["Delete bone","ボーンを削除"],"Umbenennen":["Rename","名前を変更"],"Zuweisen-Pinsel":["Assign brush","割り当てブラシ"],"Automatisch zuordnen":["Auto-assign","自動で割り当て"],"Aufbau auf alle Frames":["Rig to all frames","構造を全フレームに"],"Gelenke füllen":["Fill joints","関節を埋める"],"Pose zurücksetzen":["Reset pose","ポーズをリセット"],"Pose einbacken":["Bake pose","ポーズを焼き込む"],"Rechteck":["Rectangle","長方形"],"Lasso":["Lasso","なげなわ"],"Farbe":["Color","色"],"Zusammenhängend":["Contiguous","隣接のみ"],"Neu":["New","新規"],"Hinzufügen":["Add","追加"],"Abziehen":["Subtract","削除"],"Alles":["All","すべて"],"Transformieren":["Transform","変形"],"In nächsten Frame":["To next frame","次のフレームへ"],"Als neue Ebene":["As new layer","新規レイヤーとして"],"Lücken füllen":["Fill gaps","隙間を埋める"],"Inhalt löschen":["Clear content","内容を消去"],"Umkehren":["Invert","反転"],"Aufheben":["Deselect","選択解除"],"Dieser Frame":["This frame","このフレーム"],"Alle Frames":["All frames","全フレーム"],"Spiegeln ↔":["Flip ↔","反転 ↔"],"Spiegeln ↕":["Flip ↕","反転 ↕"],"Einpassen":["Fit","フィット"],"Zurücksetzen":["Reset","リセット"],"Abbrechen":["Cancel","キャンセル"],"Fertig":["Done","完了"],"Farbwähler":["Color picker","カラーピッカー"],"Paletten":["Palettes","パレット"],"Im Projekt":["In project","プロジェクト内"],"Zuletzt verwendet":["Recently used","最近使った色"],"Bearbeiten":["Edit","編集"],"Feld antippen und mit dem Farbwähler live ändern. + fügt die aktuelle Farbe hinzu.":["Tap a swatch and change it live with the color picker. + adds the current color.","スウォッチをタップしてカラーピッカーでその場で変更。+ で現在の色を追加します。"],"Entfernen":["Remove","削除"],"Farben im Projekt":["Colors in project","プロジェクト内の色"],"Tippen wählt die Farbe. Gedrückt halten färbt sie auf der aktiven Ebene in allen Frames um.":["Tap to choose the color. Press and hold to recolor it on the active layer in all frames.","タップで色を選択。長押しすると、アクティブなレイヤーの全フレームでその色を置き換えます。"],"Leinwand":["Canvas","キャンバス"],"Teilen":["Share","共有"],"Einstellungen":["Settings","設定"],"Bild oder Spritesheet importieren …":["Import image or sprite sheet …","画像・スプライトシートを読み込む…"],"PNG oder animiertes GIF in Frames aufteilen":["Split a PNG or animated GIF into frames","PNGやアニメGIFをフレームに分割"],"Video, GIF oder Bilder pixeln …":["Pixelate video, GIF or images …","動画・GIF・画像をドット化…"],"Mit gemeinsamer Palette in Pixel-Art umwandeln":["Turn into pixel art with a shared palette","共通パレットでドット絵に変換"],"Projekt öffnen …":["Open project …","プロジェクトを開く…"],"Eine gespeicherte .json-Datei laden":["Load a saved .json file","保存した .json ファイルを読み込む"],"Neues Projekt …":["New project …","新規プロジェクト…"],"Leere Leinwand in einem neuen Tab":["Empty canvas in a new tab","新しいタブに空のキャンバス"],"Leinwand anpassen …":["Canvas size …","キャンバスサイズ…"],"Zuschneiden, erweitern oder den Inhalt skalieren":["Crop, extend or scale the content","切り抜き・拡張・内容の拡大縮小"],"Pixelraster":["Pixel grid","ピクセルグリッド"],"Spritesheet exportieren …":["Export sprite sheet …","スプライトシートを書き出す…"],"PNG mit allen Frames, z. B. für Godot":["PNG with all frames, e.g. for Godot","全フレームのPNG（Godotなど向け）"],"Als GIF exportieren …":["Export as GIF …","GIFで書き出す…"],"Animation mit Endlosschleife":["Animation with endless loop","無限ループのアニメーション"],"Projekt speichern":["Save project","プロジェクトを保存"],".json mit allen Frames, Ebenen und Skeletten":[".json with all frames, layers and skeletons","全フレーム・レイヤー・スケルトンを含む .json"],"Mit dem Finger zeichnen":["Draw with finger","指で描く"],"Zwei Finger tippen:":["Two-finger tap:","2本指タップ:"],"Drei Finger tippen:":["Three-finger tap:","3本指タップ:"],"Finger gedrückt halten:":["Press and hold a finger:","指で長押し:"],"Farbe aufnehmen":["Pick color","色を取得"],"Zwei Finger ziehen:":["Two-finger drag:","2本指ドラッグ:"],"Zoomen und Verschieben":["Zoom and pan","ズームと移動"],"Zwei Finger drehen:":["Two-finger rotate:","2本指で回転:"],"Leinwand drehen (rastet bei 90° ein)":["Rotate canvas (snaps at 90°)","キャンバスを回転（90°でスナップ）"],"Schnell zusammenkneifen:":["Quick pinch:","素早くピンチ:"],"Leinwand einpassen und gerade richten":["Fit and straighten the canvas","キャンバスをフィットしてまっすぐに"],"Aktive Ebene antippen:":["Tap active layer:","アクティブなレイヤーをタップ:"],"Ebenen-Optionen":["Layer options","レイヤーオプション"],"Aktiven Frame antippen:":["Tap active frame:","アクティブなフレームをタップ:"],"Frame-Optionen":["Frame options","フレームオプション"],"Tab gedrückt halten:":["Press and hold a tab:","タブを長押し:"],"Projekt umbenennen":["Rename project","プロジェクト名を変更"],"Stift oder Radierer zweimal antippen:":["Tap pencil or eraser twice:","ペンか消しゴムを2回タップ:"],"Pinselbibliothek":["Brush library","ブラシライブラリ"],"Tastatur:":["Keyboard:","キーボード:"],"B, G, E, I, S, T, L, O, D, M, Leertaste ziehen, ← →, Strg+Z":["B, G, E, I, S, T, L, O, D, M, Space + drag, ← →, Ctrl+Z","B, G, E, I, S, T, L, O, D, M, Space＋ドラッグ, ← →, Ctrl+Z"],"Pinsel":["Brush","ブラシ"],"Symmetrie":["Symmetry","対称"],"Spiegelt jeden Strich an der senkrechten Mitte (M)":["Mirrors every stroke at the vertical center (M)","各ストロークを縦の中心で反転 (M)"],"Die Größe stellst du links ein. Abdunkeln und Aufhellen gehen bei Palettenfarben eine Palettenstufe weiter, bei allen anderen Farben verschieben sie Helligkeit und Farbton.":["Set the size on the left. Darken and Lighten move one palette step for palette colors; for all other colors they shift brightness and hue.","サイズは左で設定します。「暗く」「明るく」はパレットの色ならパレットを1段階進め、それ以外の色では明るさと色相をずらします。"],"Farbton, Sättigung, Helligkeit …":["Hue, saturation, brightness …","色相・彩度・明るさ…"],"Dazu Kontrast, Temperatur und Invertieren, für alle Frames":["Plus contrast, temperature and invert, for all frames","コントラスト・色温度・反転も、全フレームに"],"Verlaufsumsetzung …":["Gradient map …","グラデーションマップ…"],"Helligkeit auf einen Farbverlauf setzen, für alle Frames":["Map brightness onto a color gradient, for all frames","明るさをグラデーションに置き換え（全フレーム）"],"Auf Palette umfärben …":["Recolor to palette …","パレットに合わせて色変換…"],"Jede Farbe durch die ähnlichste Palettenfarbe ersetzen":["Replace each color with the closest palette color","各色をパレットの最も近い色に置き換え"],"Farbe umfärben":["Recolor","色の置き換え"],"Eine Farbe antippen und in allen Frames tauschen":["Tap a color and swap it in all frames","色をタップして全フレームで置き換え"],"Risse auf der aktiven Ebene schließen, in der Auswahl falls vorhanden":["Close cracks on the active layer, inside the selection if there is one","アクティブなレイヤーの隙間を埋める（選択範囲があればその中）"],"Animation":["Animation","アニメーション"],"Bildrate":["Frame rate","フレームレート"],"Zwiebelschicht":["Onion skin","オニオンスキン"],"Vorigen Frame durchscheinend zeigen":["Show the previous frame translucent","前のフレームを半透明で表示"],"Frame":["Frame","フレーム"],"Frames":["Frames","フレーム"],"Duplizieren":["Duplicate","複製"],"Löschen":["Delete","削除"],"Nur dieser Frame":["Only this frame","このフレームのみ"],"Transparent":["Transparent","透明"],"Übernehmen":["Apply","適用"],"Ebenen":["Layers","レイヤー"],"Ebene":["Layer","レイヤー"],"Nach oben":["Move up","上へ"],"Nach unten":["Move down","下へ"],"In Frames kopieren …":["Copy to frames …","フレームにコピー…"],"Nach unten zusammenfügen":["Merge down","下のレイヤーと結合"],"Skelett hinzufügen …":["Add skeleton …","スケルトンを追加…"],"Aktive Ebene noch einmal antippen für Optionen. Beim Export werden alle sichtbaren Ebenen zusammengefügt.":["Tap the active layer again for options. All visible layers are merged on export.","アクティブなレイヤーをもう一度タップするとオプション。書き出し時は表示中のレイヤーがすべて結合されます。"],"Transformieren abgebrochen":["Transform canceled","変形をキャンセルしました"],"Umfärben abgebrochen":["Recolor canceled","色の置き換えをキャンセルしました"],"Nichts zum Rückgängigmachen":["Nothing to undo","取り消す操作はありません"],"Nichts zum Wiederholen":["Nothing to redo","やり直す操作はありません"],"Wiederholt":["Redone","やり直しました"],"Apple Pencil erkannt: Mit dem Finger verschiebst du jetzt die Leinwand":["Apple Pencil detected: your finger now moves the canvas","Apple Pencilを検出：指でキャンバスを移動します"],"Eingepasst":["Fitted","フィットしました"],"Dort ist kein Pixel":["There is no pixel there","そこにはピクセルがありません"],"Pixel":["Pixel","ピクセル"],"Quadratisch, harte Kanten":["Square, hard edges","四角、硬いエッジ"],"Rund":["Round","丸"],"Runde Spitze ab 3 px":["Round tip from 3 px","3 px以上で丸い先端"],"Pixel-Perfect":["Pixel-Perfect","ピクセルパーフェクト"],"Saubere 1-px-Linien ohne doppelte Ecken":["Clean 1 px lines without double corners","角が重ならないきれいな1 px線"],"Dither 50 %":["Dither 50 %","ディザ 50 %"],"Schachbrettmuster":["Checkerboard pattern","市松模様"],"Dither 25 %":["Dither 25 %","ディザ 25 %"],"Lockeres Rautenmuster":["Loose diamond pattern","まばらなひし形模様"],"Sprühdose":["Spray can","スプレー"],"Verstreute Pixel":["Scattered pixels","散らばったピクセル"],"Abdunkeln":["Darken","暗く"],"Eine Stufe dunkler, Schatten leicht ins Blaue":["One step darker, shadows slightly bluish","1段階暗く、影はやや青寄り"],"Aufhellen":["Lighten","明るく"],"Eine Stufe heller, Lichter leicht ins Gelbe":["One step lighter, highlights slightly yellowish","1段階明るく、光はやや黄色寄り"],"Linie":["Line","直線"],"Gerade Linie ziehen":["Draw a straight line","まっすぐな線を引く"],"Rahmen aufziehen":["Drag a frame","枠をドラッグ"],"Ellipse":["Ellipse","楕円"],"Kreis oder Oval aufziehen":["Drag a circle or oval","円や楕円をドラッグ"],"Radierer":["Eraser","消しゴム"],"Symmetrie an":["Symmetry on","対称オン"],"Symmetrie aus":["Symmetry off","対称オフ"],"Das ist die Skelett-Ebene. Tippe oben auf „Zeichnen“.":["This is the skeleton layer. Tap “Draw” at the top.","これはスケルトンレイヤーです。上の「描画」をタップしてください。"],"Stift":["Pencil","ペン"],"Füllen":["Fill","塗りつぶし"],"Pipette – tippe auf eine Farbe":["Eyedropper – tap a color","スポイト – 色をタップ"],"Umfärben – tippe auf eine Farbe der aktiven Ebene":["Recolor – tap a color on the active layer","色の置き換え – アクティブなレイヤーの色をタップ"],"Auswahl":["Select","選択"],"Noch keine":["None yet","まだありません"],"Die Leinwand ist leer":["The canvas is empty","キャンバスは空です"],"Ungültiger Hex-Wert":["Invalid hex value","無効なHEX値"],"Dort ist kein Pixel – tippe auf eine Farbe":["There is no pixel there – tap a color","そこにはピクセルがありません – 色をタップしてください"],"Keine weiteren Farben im Projekt":["No other colors in the project","プロジェクトに他の色はありません"],"Umgefärbt":["Recolored","色を置き換えました"],"Ausblenden":["Hide","非表示"],"Einblenden":["Show","表示"],"Ein Skelett lässt sich nicht duplizieren":["A skeleton can't be duplicated","スケルトンは複製できません"],"Ebene dupliziert":["Layer duplicated","レイヤーを複製しました"],"Eine Ebene muss bleiben":["One layer must remain","レイヤーは1つ以上必要です"],"Ebene gelöscht":["Layer deleted","レイヤーを削除しました"],"Darunter liegt keine Ebene":["There is no layer below","下にレイヤーがありません"],"Skelett-Ebenen lassen sich nicht zusammenfügen":["Skeleton layers can't be merged","スケルトンレイヤーは結合できません"],"Es gibt nur einen Frame. Lege zuerst weitere Frames an.":["There is only one frame. Add more frames first.","フレームが1つしかありません。先にフレームを追加してください。"],"· Aufbau und Pose des Skeletts":["· skeleton rig and pose","· スケルトンの構造とポーズ"],"Die Ebene ist in diesem Frame leer. „Ersetzen“ leert sie in den gewählten Frames.":["The layer is empty in this frame. “Replace” clears it in the selected frames.","このフレームではレイヤーが空です。「置き換え」を選ぶと選んだフレームのレイヤーが空になります。"],"Beim Kopieren":["When copying","コピー方法"],"Ersetzen":["Replace","置き換え"],"Darüberlegen":["Overlay","重ねる"],"Ebene in Frames kopieren":["Copy layer to frames","レイヤーをフレームにコピー"],"Alle":["All","すべて"],"Keine":["None","なし"],"Ab hier bis zum Ende":["From here to the end","ここから最後まで"],"Alle davor":["All before","これより前すべて"],"Jeder zweite":["Every second","1つおき"],"Frames wählen":["Choose frames","フレームを選択"],"Der Inhalt der Ebene in den gewählten Frames wird ersetzt.":["The layer's content in the selected frames is replaced.","選んだフレームのレイヤーの内容が置き換えられます。"],"Die Pixel werden über den vorhandenen Inhalt der Ebene gelegt.":["The pixels are laid over the layer's existing content.","ピクセルがレイヤーの既存の内容の上に重ねられます。"],"Name der Ebene":["Layer name","レイヤー名"],"Inhalt gelöscht":["Content cleared","内容を消去しました"],"In der Auswahl wurden keine Lücken gefunden":["No gaps were found in the selection","選択範囲に隙間は見つかりませんでした"],"Auswahl als neue Ebene dupliziert":["Selection duplicated as a new layer","選択範囲を新規レイヤーとして複製しました"],"Ziehen zum Verschieben, Ecken zum Skalieren. „Einpassen“ verkleinert das Bild auf die Leinwand.":["Drag to move, corners to scale. “Fit” shrinks the image to the canvas.","ドラッグで移動、角で拡大縮小。「フィット」で画像をキャンバスに収めます。"],"Ziehen zum Verschieben, Ecken zum Skalieren. „Fertig“ setzt das Bild ein.":["Drag to move, corners to scale. “Done” places the image.","ドラッグで移動、角で拡大縮小。「完了」で画像を配置します。"],"Bild eingesetzt":["Image placed","画像を配置しました"],"Nur zusammenhängende Fläche":["Contiguous area only","隣接する領域のみ"],"Alle Pixel dieser Farbe im Frame":["All pixels of this color in the frame","フレーム内のこの色のピクセルすべて"],"Gilt nur für diesen Frame":["Applies to this frame only","このフレームのみに適用"],"Pose eingebacken – du zeichnest jetzt auf der verformten Figur":["Pose baked – you are now drawing on the deformed figure","ポーズを焼き込みました – 変形したフィギュアに描いています"],"Arm links oben":["Upper left arm","左上腕"],"Arm links unten":["Lower left arm","左前腕"],"Bein links oben":["Upper left leg","左太もも"],"Bein links unten":["Lower left leg","左すね"],"Hüfte":["Hip","腰"],"Körper":["Body","胴体"],"Kopf":["Head","頭"],"Bein rechts oben":["Upper right leg","右太もも"],"Bein rechts unten":["Lower right leg","右すね"],"Arm rechts oben":["Upper right arm","右上腕"],"Arm rechts unten":["Lower right arm","右前腕"],"Hinterbein fern oben":["Far hind leg upper","奥の後ろ脚（上）"],"Hinterbein fern unten":["Far hind leg lower","奥の後ろ脚（下）"],"Vorderbein fern oben":["Far front leg upper","奥の前脚（上）"],"Vorderbein fern unten":["Far front leg lower","奥の前脚（下）"],"Schwanz":["Tail","しっぽ"],"Hals":["Neck","首"],"Hinterbein nah oben":["Near hind leg upper","手前の後ろ脚（上）"],"Hinterbein nah unten":["Near hind leg lower","手前の後ろ脚（下）"],"Vorderbein nah oben":["Near front leg upper","手前の前脚（上）"],"Vorderbein nah unten":["Near front leg lower","手前の前脚（下）"],"Knochen 1":["Bone 1","ボーン 1"],"Mensch":["Human","人"],"Vierbeiner":["Quadruped","四足動物"],"Kette":["Chain","チェーン"],"Einzelner Knochen":["Single bone","単一ボーン"],"Wähle zuerst die Ebene mit deiner Figur":["First choose the layer with your figure","先にフィギュアのレイヤーを選んでください"],"Skelett hinzufügen":["Add skeleton","スケルトンを追加"],"Hüfte, Körper, Kopf, Arme und Beine mit je zwei Gliedern":["Hip, body, head, arms and legs with two segments each","腰・胴体・頭、腕と脚はそれぞれ2節"],"Seitenansicht mit Kopf rechts: Körper, Hals, Kopf, Schwanz, vier Beine":["Side view, head on the right: body, neck, head, tail, four legs","側面図・頭は右：胴体・首・頭・しっぽ・4本の脚"],"Fünf Glieder hintereinander: Schwanz, Schlange, Tentakel, Seil, Pflanze":["Five segments in a row: tail, snake, tentacle, rope, plant","5つの節が連なる：しっぽ・ヘビ・触手・ロープ・植物"],"Leerer Start: Knochen frei auf die Figur ziehen":["Empty start: drag bones freely onto the figure","空から開始：ボーンを自由にフィギュアへドラッグ"],"Skelett":["Skeleton","スケルトン"],"Ziehe auf einem freien Bereich, um weitere Knochen anzulegen":["Drag on an empty area to add more bones","空いている場所をドラッグしてボーンを追加"],"Skelett hinzugefügt: Ziehe die Gelenke an die richtigen Stellen deiner Figur":["Skeleton added: drag the joints to the right places on your figure","スケルトンを追加しました：関節をフィギュアの正しい位置にドラッグしてください"],"Das Skelett ist ausgeblendet":["The skeleton is hidden","スケルトンは非表示です"],"Wähle zuerst einen Knochen":["First choose a bone","先にボーンを選んでください"],"Knochen":["Bones","ボーン"],"Knochen angelegt":["Bone added","ボーンを作成しました"],"Du zeichnest auf der Figur":["You are drawing on the figure","フィギュアに描いています"],"Gelenke ziehen · auf freiem Bereich ziehen = neuer Knochen":["Drag joints · drag on empty area = new bone","関節をドラッグ · 空き場所をドラッグ = 新しいボーン"],"Knochenende ziehen = drehen · Wurzelknochen ziehen = bewegen":["Drag bone end = rotate · drag root bone = move","ボーンの先端をドラッグ = 回転 · ルートボーンをドラッグ = 移動"],"Unter dem Skelett liegt keine Ebene zum Zeichnen":["There is no layer to draw on below the skeleton","スケルトンの下に描画できるレイヤーがありません"],"Gelenke füllen an: Lücken an geknickten Gelenken werden geschlossen":["Fill joints on: gaps at bent joints are closed","関節を埋める オン：曲がった関節の隙間を埋めます"],"Gelenke füllen aus: Teile bewegen sich ganz starr":["Fill joints off: parts move completely rigid","関節を埋める オフ：パーツは完全に固定して動きます"],"IK an: Hand oder Fuß ziehen, Ellbogen und Knie folgen":["IK on: drag hand or foot, elbows and knees follow","IK オン：手や足をドラッグすると肘と膝が追従"],"IK aus: jeder Knochen dreht einzeln":["IK off: each bone rotates on its own","IK オフ：ボーンを1本ずつ回転"],"Pose zurückgesetzt":["Pose reset","ポーズをリセットしました"],"Die Pose ist schon die Ruhelage":["The pose is already the rest pose","ポーズはすでに基本姿勢です"],"Pose eingebacken":["Pose baked","ポーズを焼き込みました"],"Zuordnung automatisch nach nächstem Knochen":["Assigned automatically by nearest bone","最も近いボーンで自動割り当てしました"],"Aufbau auf alle Frames übertragen":["Rig copied to all frames","構造を全フレームに適用しました"],"Knochen angefügt – zieh sein Ende an die richtige Stelle":["Bone added – drag its end to the right place","ボーンを追加しました – 先端を正しい位置にドラッグしてください"],"Knochen umbenennen":["Rename bone","ボーン名を変更"],"Name":["Name","名前"],"Speichern":["Save","保存"],"Knallig":["Vivid","鮮やか"],"Neon-Nacht":["Neon night","ネオンナイト"],"Abendglut":["Sunset glow","夕焼け"],"Cyber":["Cyber","サイバー"],"Spielhalle":["Arcade","アーケード"],"Tropenfieber":["Tropical fever","トロピカル"],"Gift":["Toxic","毒"],"Glutkern":["Ember","残り火"],"Gletscher":["Glacier","氷河"],"Gedämpft":["Muted","落ち着いた"],"Nebelwald":["Misty forest","霧の森"],"Staub":["Dust","砂ぼこり"],"Schiefer":["Slate","スレート"],"Meeresdunst":["Sea haze","海霧"],"Herbstlaub":["Autumn leaves","紅葉"],"Rosé":["Rosé","ロゼ"],"Pastell":["Pastel","パステル"],"Moor":["Moor","湿原"],"Graustufen":["Grayscale","グレースケール"],"Eigene":["Custom","カスタム"],"Neue Palette":["New palette","新規パレット"],"· fest":["· built-in","· 固定"],"Aktuelle Farbe hinzufügen":["Add current color","現在の色を追加"],"Noch leer. Wähle eine Farbe und tippe auf +.":["Still empty. Choose a color and tap +.","まだ空です。色を選んで + をタップしてください。"],"Nach Helligkeit sortieren":["Sort by brightness","明るさ順に並べ替え"],"Kopie anlegen":["Make a copy","コピーを作成"],"Palette löschen":["Delete palette","パレットを削除"],"Als eigene Palette kopieren":["Copy as custom palette","カスタムパレットとしてコピー"],"Beginnen mit":["Start with","開始時の内容"],"Leer":["Empty","空"],"Farben selbst hinzufügen: Farbe wählen, dann auf + tippen":["Add colors yourself: choose a color, then tap +","色を自分で追加：色を選んで + をタップ"],"Eine Palette hat höchstens 64 Farben":["A palette has at most 64 colors","パレットは最大64色です"],"Diese Farbe ist schon in der Palette":["This color is already in the palette","この色はすでにパレットにあります"],"Palette umbenennen":["Rename palette","パレット名を変更"],"Palette löschen?":["Delete palette?","パレットを削除しますか？"],"Wähle eine Ebene mit Pixeln":["Choose a layer with pixels","ピクセルのあるレイヤーを選んでください"],"Farben anpassen":["Adjust colors","色の調整"],"Vorher":["Before","変更前"],"Nachher":["After","変更後"],"Farbe & Licht":["Color & light","色と明るさ"],"Verlauf":["Gradient","グラデーション"],"Palette":["Palette","パレット"],"Farbton":["Hue","色相"],"Sättigung":["Saturation","彩度"],"Helligkeit":["Brightness","明るさ"],"Kontrast":["Contrast","コントラスト"],"Temperatur":["Temperature","色温度"],"Invertieren":["Invert","反転"],"Werte zurücksetzen":["Reset values","値をリセット"],"Verlauf · tippe eine Farbe zum Ändern":["Gradient · tap a color to change it","グラデーション · 色をタップして変更"],"Farbe hinzufügen":["Add color","色を追加"],"Farbe entfernen":["Remove color","色を削除"],"Stärke":["Strength","強さ"],"In Stufen (scharfe Pixel-Farben)":["In steps (crisp pixel colors)","段階的（くっきりしたドット色）"],"Auf ganzen Verlauf dehnen":["Stretch to the whole gradient","グラデーション全体に広げる"],"Anwenden auf":["Apply to","適用先"],"Aktive Ebene":["Active layer","アクティブなレイヤー"],"Alle Ebenen":["All layers","全レイヤー"],"Nur in der Auswahl":["Only in the selection","選択範囲内のみ"],"Anwenden":["Apply","適用"],"Hier gibt es keine Pixel zum Umsetzen":["There are no pixels to convert here","変換するピクセルがありません"],"Verändert Farbton, Sättigung, Helligkeit und mehr. Jede Farbe wird genau einer neuen Farbe zugeordnet – die Anzahl der Farben bleibt gleich.":["Changes hue, saturation, brightness and more. Each color maps to exactly one new color – the number of colors stays the same.","色相・彩度・明るさなどを変更します。各色はちょうど1つの新しい色に対応するため、色数は変わりません。"],"Ersetzt jede Farbe anhand ihrer Helligkeit durch eine Farbe aus dem Verlauf – wie die Verlaufsumsetzung in Procreate.":["Replaces each color by its brightness with a color from the gradient – like the gradient map in Procreate.","各色を明るさに応じてグラデーションの色に置き換えます（Procreateのグラデーションマップと同様）。"],"Ersetzt jede Farbe durch die ähnlichste Farbe der Palette.":["Replaces each color with the closest color in the palette.","各色をパレットの最も近い色に置き換えます。"],"Verlauf · dunkel nach hell · tippe eine Farbe zum Ändern":["Gradient · dark to light · tap a color to change it","グラデーション · 暗→明 · 色をタップして変更"],"Palettenfarben · tippe eine Farbe zum Ändern":["Palette colors · tap a color to change it","パレットの色 · 色をタップして変更"],"Farben angepasst":["Colors adjusted","色を調整しました"],"Verlauf umgesetzt":["Gradient map applied","グラデーションマップを適用しました"],"Auf Palette umgefärbt":["Recolored to palette","パレットに合わせて色変換しました"],"Frame dupliziert":["Frame duplicated","フレームを複製しました"],"Neuer Frame":["New frame","新しいフレーム"],"Ein Frame muss bleiben":["One frame must remain","フレームは1つ以上必要です"],"Frame gelöscht":["Frame deleted","フレームを削除しました"],"Für eine Animation brauchst du mindestens zwei Frames":["An animation needs at least two frames","アニメーションには2フレーム以上必要です"],"Anhalten":["Pause","停止"],"Zwiebelschicht an":["Onion skin on","オニオンスキン オン"],"Zwiebelschicht aus":["Onion skin off","オニオンスキン オフ"],"Öffnet sich in einem neuen Tab.":["Opens in a new tab.","新しいタブで開きます。"],"Breite (px)":["Width (px)","幅 (px)"],"Höhe (px)":["Height (px)","高さ (px)"],"Erstellen":["Create","作成"],"Ebene 1":["Layer 1","レイヤー 1"],"Anker":["Anchor","基準点"],"Leinwand anpassen":["Canvas size","キャンバスサイズ"],"Zuschneiden & erweitern":["Crop & extend","切り抜き・拡張"],"Inhalt skalieren":["Scale content","内容を拡大縮小"],"Seitenverhältnis sperren":["Lock aspect ratio","縦横比を固定"],"Auf Inhalt zuschneiden":["Crop to content","内容に合わせて切り抜き"],"Quadratisch":["Square","正方形"],"· Pixel werden vergrößert (ohne Unschärfe)":["· pixels are enlarged (without blur)","· ピクセルを拡大（ぼかしなし）"],"· Pixel werden verkleinert (ohne Unschärfe)":["· pixels are reduced (without blur)","· ピクセルを縮小（ぼかしなし）"],"Tipp: Bei ganzzahligen Faktoren (×2, ×3, ×½) bleiben alle Pixel gleich groß.":["Tip: with whole-number factors (×2, ×3, ×½) all pixels stay the same size.","ヒント：整数倍（×2、×3、×½）ならすべてのピクセルが同じ大きさのままです。"],"· Pixel außerhalb des Rahmens werden in allen Frames abgeschnitten":["· pixels outside the frame are cut off in all frames","· 枠の外のピクセルは全フレームで切り取られます"],"Größer als 512 px geht nicht":["Larger than 512 px isn't possible","512 pxより大きくはできません"],"kein GIF":["not a GIF","GIFではありません"],"keine Frames":["no frames","フレームがありません"],"kein PNG":["not a PNG","PNGではありません"],"nicht unterstützt":["not supported","サポートされていません"],"Das Bild konnte nicht gelesen werden":["The image could not be read","画像を読み込めませんでした"],"Import":["Import","読み込み"],"GIF importieren":["Import GIF","GIFを読み込む"],"Spritesheet importieren":["Import sprite sheet","スプライトシートを読み込む"],"Eine Spalte weniger":["One column less","列を1つ減らす"],"Eine Spalte mehr":["One column more","列を1つ増やす"],"Eine Zeile weniger":["One row less","行を1つ減らす"],"Eine Zeile mehr":["One row more","行を1つ増やす"],"Spalten":["Columns","列"],"Zeilen":["Rows","行"],"Leere Frames überspringen":["Skip empty frames","空のフレームをスキップ"],"Importieren als":["Import as","読み込み方法"],"Frames anhängen":["Append frames","フレームを追加"],"Importieren":["Import","読み込む"],"Öffnet einen neuen Tab.":["Opens a new tab.","新しいタブを開きます。"],"Erhöhe Spalten oder Zeilen.":["Increase columns or rows.","列か行を増やしてください。"],"Erhöhe Spalten oder Zeilen oder importiere als neue Ebene.":["Increase columns or rows, or import as a new layer.","列か行を増やすか、新規レイヤーとして読み込んでください。"],"Keine Frames gefunden":["No frames found","フレームが見つかりません"],"Wähle ein Video, ein GIF oder mehrere Bilder":["Choose a video, a GIF or several images","動画・GIF・複数の画像を選んでください"],"Bilder werden geladen …":["Loading images …","画像を読み込み中…"],"Die Bilder konnten nicht gelesen werden":["The images could not be read","画像を読み込めませんでした"],"Das Video lässt sich hier nicht öffnen":["The video can't be opened here","この動画はここでは開けません"],"Bild":["Image","画像"],"Bilder":["Images","画像"],"· gekürzt, weil sehr groß":["· shortened because very large","· 大きすぎるため短縮"],"Jedes zweite":["Every second","1つおき"],"Jedes dritte":["Every third","2つおき"],"Ein Bild zurück":["One image back","1枚戻る"],"Ein Bild vor":["One image forward","1枚進む"],"Frame hier setzen":["Set frame here","ここにフレームを設定"],"Frame entfernen":["Remove frame","フレームを削除"],"Anzahl":["Count","数"],"Gleichmäßig verteilen":["Distribute evenly","均等に配置"],"Tippe auf die Leiste, um zu suchen. Frames lassen sich ziehen.":["Tap the bar to scrub. Frames can be dragged.","バーをタップして移動。フレームはドラッグできます。"],"Video oder Bilder pixeln":["Pixelate video or images","動画・画像をドット化"],"Wird berechnet …":["Calculating …","計算中…"],"Höhe":["Height","高さ"],"Farben":["Colors","色"],"Hintergrund entfernen":["Remove background","背景を削除"],"Toleranz":["Tolerance","許容値"],"Auf die Figur zuschneiden":["Crop to the figure","フィギュアに合わせて切り抜き"],"Einzelne Pixel aufräumen":["Clean up stray pixels","孤立したピクセルを整理"],"Flackern dämpfen":["Reduce flicker","ちらつきを抑える"],"Dithering":["Dithering","ディザリング"],"Außenlinie":["Outline","アウトライン"],"Das hat nicht geklappt. Versuche andere Frames.":["That didn't work. Try other frames.","うまくいきませんでした。別のフレームを試してください。"],"Setze mindestens einen Frame.":["Set at least one frame.","少なくとも1つフレームを設定してください。"],"Wähle mindestens ein Bild.":["Choose at least one image.","少なくとも1枚画像を選んでください。"],"Nichts gefunden. Senke die Toleranz oder schalte „Hintergrund entfernen“ aus.":["Nothing found. Lower the tolerance or turn off “Remove background”.","何も見つかりません。許容値を下げるか「背景を削除」をオフにしてください。"],"Als GIF exportieren":["Export as GIF","GIFで書き出す"],"Spritesheet exportieren":["Export sprite sheet","スプライトシートを書き出す"],"Vorschau des Spritesheets":["Sprite sheet preview","スプライトシートのプレビュー"],"Anordnung":["Layout","配置"],"Eine Zeile":["One row","1行"],"Raster":["Grid","グリッド"],"Eine Spalte":["One column","1列"],"Spalten im Raster":["Columns in grid","グリッドの列数"],"Skalierung":["Scale","拡大率"],"Dateiname":["File name","ファイル名"],"Nur aktuellen Frame":["Current frame only","現在のフレームのみ"],"Als GIF speichern":["Save as GIF","GIFとして保存"],"Spritesheet speichern":["Save sprite sheet","スプライトシートを保存"],"unter":["under","の"],"Zu groß zum Speichern.":["Too large to save.","大きすぎて保存できません。"],"Wähle eine kleinere Skalierung.":["Choose a smaller scale.","小さい拡大率を選んでください。"],"Achtung:":["Note:","注意:"],"Godot lädt Texturen nur bis 16384 px Kantenlänge. Wähle „Raster“.":["Godot only loads textures up to 16384 px per side. Choose “Grid”.","Godotが読み込めるテクスチャは1辺16384 pxまでです。「グリッド」を選んでください。"],"Zu groß – wähle eine kleinere Skalierung":["Too large – choose a smaller scale","大きすぎます – 小さい拡大率を選んでください"],"Spritesheet wird erstellt …":["Creating sprite sheet …","スプライトシートを作成中…"],"Zu groß für ein GIF – wähle eine kleinere Skalierung":["Too large for a GIF – choose a smaller scale","GIFには大きすぎます – 小さい拡大率を選んでください"],"GIF wird erstellt …":["Creating GIF …","GIFを作成中…"],"Ein GIF hat höchstens 255 Farben – die Farben wurden reduziert":["A GIF has at most 255 colors – the colors were reduced","GIFは最大255色です – 色数を減らしました"],"Gespeichert":["Saved","保存しました"],"Bitte kurz warten und noch einmal versuchen":["Please wait a moment and try again","少し待ってからもう一度お試しください"],"Speichern hat nicht geklappt":["Saving didn't work","保存できませんでした"],"Projekt":["Project","プロジェクト"],"Projekt in neuem Tab geöffnet":["Project opened in a new tab","プロジェクトを新しいタブで開きました"],"Diese Datei ist kein Pixelwerk-Projekt":["This file isn't a Pixelwerk project","このファイルはPixelwerkのプロジェクトではありません"],"Unbenannt":["Untitled","無題"],"Änderungen sichern?":["Save changes?","変更を保存しますか？"],"geändert. Wenn du den Tab schließt, ist dieser Stand weg.":["– if you close the tab, this state is lost.","以降に変更されています。タブを閉じるとこの状態は失われます。"],"Nicht speichern":["Don't save","保存しない"],"Nicht gespeichert – der Tab bleibt offen":["Not saved – the tab stays open","保存されていません – タブは開いたままです"],"nicht als Datei gespeichert":["not saved as a file","ファイルに保存されていません"],"Tab schließen":["Close tab","タブを閉じる"],"Schatten":["Shadow","影"],"Schleim":["Slime","スライム"],"Beispiel":["Sample","サンプル"],"Beispiel mit zwei Ebenen: Tippe oben rechts auf das Ebenen-Symbol":["Sample with two layers: tap the layers icon at the top right","2つのレイヤーのサンプル：右上のレイヤーアイコンをタップしてください"],"Sprache":["Language","言語"],"kein IndexedDB":["no IndexedDB","IndexedDBがありません"],"Bild öffnen":["Open image","画像を開く"],"Referenz schließen":["Close reference","参照を閉じる"],"Referenzbild":["Reference image","参照画像"],"Referenzfenster":["Reference window","参照ウィンドウ"],"Ein Finger verschiebt, zwei Finger zoomen. Gedrückt halten nimmt eine Farbe auf.":["One finger moves, two fingers zoom. Press and hold to pick a color.","1本指で移動、2本指でズーム。長押しで色を取得します。"],"Pixelwerk-Projekt (.json) oder Aseprite-Datei (.aseprite)":["Pixelwerk project (.json) or Aseprite file (.aseprite)","Pixelwerkプロジェクト（.json）またはAsepriteファイル（.aseprite）"],"Als Aseprite speichern (Beta)":["Save as Aseprite (beta)","Asepriteとして保存（ベータ）"],"Ebenen und Frames für Aseprite am Computer":["Layers and frames for Aseprite on your computer","パソコンのAseprite用にレイヤーとフレームを保存"],"Aseprite-Datei geöffnet":["Aseprite file opened","Asepriteファイルを開きました"],"Diese Aseprite-Datei konnte nicht gelesen werden":["This Aseprite file could not be read","このAsepriteファイルは読み込めませんでした"]},"p":[["Die Ebene „{0}“ ist ausgeblendet","The layer “{0}” is hidden","レイヤー「{0}」は非表示です"],["Auf der Ebene „{0}“ ist dort kein Pixel","There is no pixel there on the layer “{0}”","レイヤー「{0}」のそこにはピクセルがありません"],["Diese Farbe kommt auf der Ebene „{0}“ nicht vor","This color does not appear on the layer “{0}”","この色はレイヤー「{0}」にありません"],["#{0} · {1} Pixel in {2} Frames · {3}","#{0} · {1} pixels in {2} frames · {3}","#{0} · {2} フレームで {1} ピクセル · {3}"],["#{0} · {1} Pixel in {2} Frame · {3}","#{0} · {1} pixels in {2} frame · {3}","#{0} · {2} フレームで {1} ピクセル · {3}"],["#{0} · {1} Pixel in diesem Frame · {2}","#{0} · {1} pixels in this frame · {2}","#{0} · このフレームで {1} ピクセル · {2}"],["{0} Kopie","{0} copy","{0} のコピー"],["Ebene {0}","Layer {0}","レイヤー {0}"],["Mit „{0}“ zusammengefügt","Merged with “{0}”","「{0}」と結合しました"],["Neuer Frame {0} mit der Ebene „{1}“","New frame {0} with the layer “{1}”","レイヤー「{1}」で新しいフレーム {0}"],["Ebene „{0}“ in Frame {1} kopiert","Layer “{0}” copied to frame {1}","レイヤー「{0}」をフレーム {1} にコピーしました"],["„{0}“ aus Frame {1}","“{0}” from frame {1}","フレーム {1} の「{0}」"],["„{0}“ aus Frame {1} · Aufbau und Pose des Skeletts","“{0}” from frame {1} · skeleton rig and pose","フレーム {1} の「{0}」 · スケルトンの構造とポーズ"],["Frame {0}, Quelle","Frame {0}, source","フレーム {0}（コピー元）"],["Frame {0}","Frame {0}","フレーム {0}"],["{0} · Quelle","{0} · source","{0} · コピー元"],["In {0} Frames kopieren","Copy to {0} frames","{0} フレームにコピー"],["In {0} Frame kopieren","Copy to {0} frame","{0} フレームにコピー"],["Ebene „{0}“ in {1} Frames kopiert","Layer “{0}” copied to {1} frames","レイヤー「{0}」を {1} フレームにコピーしました"],["Ebene „{0}“ in {1} Frame kopiert","Layer “{0}” copied to {1} frame","レイヤー「{0}」を {1} フレームにコピーしました"],["Die Auswahl ist auf der Ebene „{0}“ leer","The selection is empty on the layer “{0}”","レイヤー「{0}」の選択範囲は空です"],["Die Ebene „{0}“ ist hier leer","The layer “{0}” is empty here","レイヤー「{0}」はここでは空です"],["{0} Lücken gefüllt","{0} gaps filled","{0} 個の隙間を埋めました"],["{0} Lücke gefüllt","{0} gap filled","{0} 個の隙間を埋めました"],["In Frame {0} kopiert","Copied to frame {0}","フレーム {0} にコピーしました"],["Neuer Frame {0} mit der Auswahl","New frame {0} with the selection","選択範囲で新しいフレーム {0}"],["Bild in {0} Frames eingesetzt","Image placed in {0} frames","画像を {0} フレームに配置しました"],["In {0} Frames transformiert","Transformed in {0} frames","{0} フレームで変形しました"],["„Fertig“ wendet die Änderung auf alle {0} Frames der Ebene an","“Done” applies the change to all {0} frames of the layer","「完了」でレイヤーの全 {0} フレームに適用します"],["Glied {0}","Segment {0}","節 {0}"],["Die Ebene „{0}“ hat schon ein Skelett","The layer “{0}” already has a skeleton","レイヤー「{0}」にはすでにスケルトンがあります"],["Für die Ebene „{0}“. Die Vorlage wird an deine Figur angepasst.","For the layer “{0}”. The template is fitted to your figure.","レイヤー「{0}」用。テンプレートはフィギュアに合わせて調整されます。"],["Skelett {0}","Skeleton {0}","スケルトン {0}"],["Knochen {0}","Bone {0}","ボーン {0}"],["Pinsel weist Pixel „{0}“ zu","Brush assigns pixels to “{0}”","ブラシでピクセルを「{0}」に割り当て"],["Knochen: {0}","Bone: {0}","ボーン: {0}"],["Knochen „{0}“ gelöscht","Bone “{0}” deleted","ボーン「{0}」を削除しました"],["{0} Farben, nach Helligkeit sortiert","{0} colors, sorted by brightness","{0} 色、明るさ順"],["{0} Farben","{0} colors","{0} 色"],["{0} Farbe","{0} color","{0} 色"],["Eigene {0}","Custom {0}","カスタム {0}"],["Palette „{0}“ mit {1} Farben angelegt","Palette “{0}” created with {1} colors","パレット「{0}」を {1} 色で作成しました"],["Palette „{0}“ angelegt – wähle eine Farbe und tippe auf +","Palette “{0}” created – choose a color and tap +","パレット「{0}」を作成しました – 色を選んで + をタップしてください"],["#{0} hinzugefügt","#{0} added","#{0} を追加しました"],["„{0}“ angelegt – jetzt bearbeitbar","“{0}” created – now editable","「{0}」を作成しました – 編集できます"],["„{0}“ mit {1} Farben wird gelöscht. Das lässt sich nicht rückgängig machen.","“{0}” with {1} colors will be deleted. This can't be undone.","{1} 色の「{0}」を削除します。元に戻せません。"],["Palette „{0}“ gelöscht","Palette “{0}” deleted","パレット「{0}」を削除しました"],["Betrifft {0} Ebenen in {1} Frames","Affects {0} layers in {1} frames","{0} レイヤー・{1} フレームが対象"],["Betrifft {0} Ebene in {1} Frames","Affects {0} layer in {1} frames","{0} レイヤー・{1} フレームが対象"],["Betrifft {0} Ebenen in {1} Frame","Affects {0} layers in {1} frame","{0} レイヤー・{1} フレームが対象"],["Betrifft {0} Ebene in {1} Frame","Affects {0} layer in {1} frame","{0} レイヤー・{1} フレームが対象"],["Farbe {0}","Color {0}","色 {0}"],["+{0} warm","+{0} warm","+{0} 暖かい"],["{0} kalt","{0} cool","{0} 冷たい"],["Frame {0} von {1}","Frame {0} of {1}","フレーム {0} / {1}"],["{0}×{1} px · Frame {2} von {3} · {4}","{0}×{1} px · Frame {2} of {3} · {4}","{0}×{1} px · フレーム {2} / {3} · {4}"],["Die Ebene „{0}“ ist in diesem Frame leer","The layer “{0}” is empty in this frame","レイヤー「{0}」はこのフレームでは空です"],["Neues Projekt {0}×{1}","New project {0}×{1}","新規プロジェクト {0}×{1}"],["Gilt für alle {0} Frames und alle Ebenen","Applies to all {0} frames and all layers","全 {0} フレームと全レイヤーに適用"],["Gilt für alle {0} Frame und alle Ebenen","Applies to all {0} frame and all layers","全 {0} フレームと全レイヤーに適用"],["{0}×{1} px →","{0}×{1} px →","{0}×{1} px →"],["{0}×{1} px · Ziehe am Rahmen oder gib eine Größe ein","{0}×{1} px · Drag the frame or enter a size","{0}×{1} px · 枠をドラッグするかサイズを入力"],["Leinwand jetzt {0}×{1} px","Canvas now {0}×{1} px","キャンバスは {0}×{1} px になりました"],["Das GIF ist sehr groß: {0} von {1} Frames werden verwendet.","The GIF is very large: {0} of {1} frames are used.","GIFが非常に大きいため、{1} フレーム中 {0} フレームを使用します。"],["{0} Frames · {1} fps","{0} frames · {1} fps","{0} フレーム · {1} fps"],["Legt die Frames ab dem aktuellen Frame als neue Ebene „{0}“ über die aktive Ebene.","Places the frames, starting at the current frame, as a new layer “{0}” above the active layer.","現在のフレームから、フレームを新規レイヤー「{0}」としてアクティブなレイヤーの上に配置します。"],["Legt das Bild in den aktuellen Frame als neue Ebene „{0}“ über die aktive Ebene.","Places the image in the current frame as a new layer “{0}” above the active layer.","画像を現在のフレームに新規レイヤー「{0}」としてアクティブなレイヤーの上に配置します。"],["Legt die Frames ab dem aktuellen Frame als neue Ebene „{0}“ über die aktive Ebene. Danach liegt es mittig auf der Leinwand und du kannst es verschieben, skalieren und drehen. Was über den Rand ragt, wird beim Bestätigen abgeschnitten. Die Anpassung gilt für alle Frames.","Places the frames, starting at the current frame, as a new layer “{0}” above the active layer. It then sits centered on the canvas and you can move, scale and rotate it. Anything sticking out over the edge is cut off when you confirm. The adjustment applies to all frames.","現在のフレームから、フレームを新規レイヤー「{0}」としてアクティブなレイヤーの上に配置します。その後キャンバス中央に置かれ、移動・拡大縮小・回転できます。はみ出した部分は確定時に切り取られます。調整は全フレームに適用されます。"],["Legt das Bild in den aktuellen Frame als neue Ebene „{0}“ über die aktive Ebene. Danach liegt es mittig auf der Leinwand und du kannst es verschieben, skalieren und drehen. Was über den Rand ragt, wird beim Bestätigen abgeschnitten.","Places the image in the current frame as a new layer “{0}” above the active layer. It then sits centered on the canvas and you can move, scale and rotate it. Anything sticking out over the edge is cut off when you confirm.","画像を現在のフレームに新規レイヤー「{0}」としてアクティブなレイヤーの上に配置します。その後キャンバス中央に置かれ、移動・拡大縮小・回転できます。はみ出した部分は確定時に切り取られます。"],["Hängt die Frames hinten an, auf der Ebene „{0}“.","Appends the frames at the end, on the layer “{0}”.","レイヤー「{0}」で、フレームを末尾に追加します。"],["Öffnet einen neuen Tab. Frames anhängen geht nur, wenn die Frames so groß sind wie das Projekt ({0}×{1} px).","Opens a new tab. Appending frames only works if the frames are the same size as the project ({0}×{1} px).","新しいタブを開きます。フレームの追加は、フレームがプロジェクトと同じサイズ（{0}×{1} px）の場合のみ可能です。"],["à {0}×{1} px","of {0}×{1} px each","（各 {0}×{1} px）"],["{0} leere werden übersprungen","{0} empty ones are skipped","空のフレーム {0} 個をスキップ"],["{0} leere wird übersprungen","{0} empty one is skipped","空のフレーム {0} 個をスキップ"],["Das Bild lässt sich nicht genau teilen: {0} px rechts und {1} px unten fallen weg","The image can't be split evenly: {0} px on the right and {1} px at the bottom are dropped","画像をちょうど分割できません：右の {0} px と下の {1} px が切り捨てられます"],["Frames dürfen als Ebene höchstens {0} px groß sein.","As a layer, frames may be at most {0} px.","レイヤーとして読み込むフレームは最大 {0} px です。"],["Frames dürfen für ein neues Projekt höchstens {0} px groß sein.","For a new project, frames may be at most {0} px.","新規プロジェクトのフレームは最大 {0} px です。"],["{0} Frames als neue Ebene importiert","{0} frames imported as a new layer","{0} フレームを新規レイヤーとして読み込みました"],["{0} Frame als neue Ebene importiert","{0} frame imported as a new layer","{0} フレームを新規レイヤーとして読み込みました"],["{0} Frames importiert","{0} frames imported","{0} フレームを読み込みました"],["{0} Frame importiert","{0} frame imported","{0} フレームを読み込みました"],["Bild {0}","Image {0}","画像 {0}"],["{0} von {1} gewählt","{0} of {1} selected","{1} 中 {0} を選択"],["{0} von {1} gewählt · höchstens 64 werden verwendet","{0} of {1} selected · at most 64 are used","{1} 中 {0} を選択 · 最大64枚を使用"],["Legt die Frames ab dem aktuellen Frame als neue Ebene „{0}“ ins aktuelle Projekt.","Places the frames, starting at the current frame, as a new layer “{0}” in the current project.","現在のフレームから、フレームを新規レイヤー「{0}」として現在のプロジェクトに配置します。"],["Legt die Frames ab dem aktuellen Frame als neue Ebene „{0}“ ins aktuelle Projekt. Danach liegen sie mittig auf der Leinwand und du kannst sie verschieben, skalieren und drehen. Die Anpassung gilt für alle Frames.","Places the frames, starting at the current frame, as a new layer “{0}” in the current project. They then sit centered on the canvas and you can move, scale and rotate them. The adjustment applies to all frames.","現在のフレームから、フレームを新規レイヤー「{0}」として現在のプロジェクトに配置します。その後キャンバス中央に置かれ、移動・拡大縮小・回転できます。調整は全フレームに適用されます。"],["{0}×{1} px · {2} Frames · {3} Farben + Linie","{0}×{1} px · {2} frames · {3} colors + line","{0}×{1} px · {2} フレーム · {3} 色＋線"],["{0}×{1} px · {2} Frame · {3} Farben + Linie","{0}×{1} px · {2} frame · {3} colors + line","{0}×{1} px · {2} フレーム · {3} 色＋線"],["{0}×{1} px · {2} Frames · {3} Farben","{0}×{1} px · {2} frames · {3} colors","{0}×{1} px · {2} フレーム · {3} 色"],["{0}×{1} px · {2} Frame · {3} Farben","{0}×{1} px · {2} frame · {3} colors","{0}×{1} px · {2} フレーム · {3} 色"],["{0} Frames mit {1} Farben importiert","{0} frames imported with {1} colors","{0} フレームを {1} 色で読み込みました"],["{0} Frame mit {1} Farben importiert","{0} frame imported with {1} colors","{0} フレームを {1} 色で読み込みました"],["{0} sichtbare Ebenen werden zusammengefügt.","{0} visible layers are merged.","表示中の {0} レイヤーを結合します。"],["{0} sichtbare Ebene wird zusammengefügt.","{0} visible layer is used.","表示中の {0} レイヤーを使用します。"],["{0} sichtbare Ebenen werden zusammengefügt. {1} ausgeblendete Ebenen bleiben weg.","{0} visible layers are merged. {1} hidden layers are left out.","表示中の {0} レイヤーを結合します。非表示の {1} レイヤーは含まれません。"],["{0} sichtbare Ebenen werden zusammengefügt. {1} ausgeblendete Ebene bleibt weg.","{0} visible layers are merged. {1} hidden layer is left out.","表示中の {0} レイヤーを結合します。非表示の {1} レイヤーは含まれません。"],["{0} sichtbare Ebene wird zusammengefügt. {1} ausgeblendete Ebenen bleiben weg.","{0} visible layer is used. {1} hidden layers are left out.","表示中の {0} レイヤーを使用します。非表示の {1} レイヤーは含まれません。"],["{0} sichtbare Ebene wird zusammengefügt. {1} ausgeblendete Ebene bleibt weg.","{0} visible layer is used. {1} hidden layer is left out.","表示中の {0} レイヤーを使用します。非表示の {1} レイヤーは含まれません。"],["{0} Frames à {1}×{2} px","{0} frames of {1}×{2} px","{0} フレーム（各 {1}×{2} px）"],["{0} Frame à {1}×{2} px","{0} frame of {1}×{2} px","{0} フレーム（{1}×{2} px）"],["GIF: {0}×{1} px · {2} Frames · {3} fps · Endlosschleife","GIF: {0}×{1} px · {2} frames · {3} fps · endless loop","GIF: {0}×{1} px · {2} フレーム · {3} fps · 無限ループ"],["{0}×{1} px. In Godot beim","{0}×{1} px. In Godot, on the","{0}×{1} px。Godotでは"],["Unbenannt {0}","Untitled {0}","無題 {0}"],["„{0}“ konnte nicht geladen werden und wurde leer angelegt","“{0}” could not be loaded and was created empty","「{0}」を読み込めなかったため、空で作成しました"],["„{0}“ geschlossen","“{0}” closed","「{0}」を閉じました"],["„{0}“ wurde seit dem letzten","“{0}” has changed since the last","「{0}」は前回の"],["{0} – nicht als Datei gespeichert","{0} – not saved as a file","{0} – ファイルに保存されていません"],["{0} Frames","{0} frames","{0} フレーム"],["{0} Frame","{0} frame","{0} フレーム"],["{0} · fest","{0} · built-in","{0} · 固定"],["{0} Bilder · {1}","{0} images · {1}","{0} 枚の画像 · {1}"],["{0} Bild · {1}","{0} image · {1}","{0} 枚の画像 · {1}"],["{0} Bilder · {1} · gekürzt, weil sehr groß","{0} images · {1} · shortened because very large","{0} 枚の画像 · {1} · 大きすぎるため短縮"],["Aseprite-Datei geöffnet. Unterschiedliche Frame-Längen: {0} fps für alle","Aseprite file opened. Different frame lengths: {0} fps for all","Asepriteファイルを開きました。フレームの長さが異なるため、すべて {0} fps にしました"]]};
 
 /* ---------- Sprache ----------
    Die Oberfläche ist auf Deutsch geschrieben. Für Englisch und Japanisch übersetzt LANG jeden sichtbaren Text,
@@ -1036,15 +1066,18 @@ function loop(t) {
   const pulse = RC.active && !RC.changed;
   if (!dirty && !pulse) return;
   dirty = false;
+  const artChanged = artDirty;
   if (artDirty) syncArt();
   if (ovlDirty) buildOverlay();
   draw(t, pulse);
+  if (artChanged && REF.open && REF.mode === 'live') drawRef();
 }
 function resize() {
   const r = stage.getBoundingClientRect();
   V.SW = r.width; V.SH = r.height;
   setBox(true);
   if (!V.fitted && S.frames.length) fit();
+  if (REF.open) placeRef();
   dirty = true;
 }
 // Größe und Lage der Zeichenfläche: ungedreht so groß wie die Bühne, gedreht ein Quadrat in Diagonalengröße
@@ -1272,7 +1305,11 @@ function eyeEnd(cancel) {
   const e = EYE; EYE = null; dirty = true;
   if (cancel || !e) return;
   if (!e.cur) { toast('Dort ist kein Pixel'); return; }
-  setColor(e.cur);
+  takePickedColor(e.cur);
+}
+// Aufgenommene Farbe übernehmen (Leinwand und Referenzfenster)
+function takePickedColor(u) {
+  setColor(u);
   addRecent(S.color);
   const disc = $('#disc'); disc.classList.remove('flash'); void disc.offsetWidth; disc.classList.add('flash');
   if (S.tool === 'picker') setTool(S.prevTool === 'picker' ? 'pencil' : S.prevTool, true);
@@ -3883,6 +3920,7 @@ function paintActPop() {
   document.querySelectorAll('#actPop .act-list').forEach(l => l.hidden = l.dataset.tab !== actTab);
   $('#actPop [data-a="grid"]').setAttribute('aria-pressed', String(S.grid));
   $('#actPop [data-a="finger"]').setAttribute('aria-pressed', String(S.fingerDraws));
+  $('#actPop [data-a="ref"]').setAttribute('aria-pressed', String(REF.open));
 }
 $('#actBtn').addEventListener('click', () => { if (toggleMini('#actPop')) paintActPop(); });
 $('#actTabs').addEventListener('click', e => { const b = e.target.closest('[data-t]'); if (b) { actTab = b.dataset.t; paintActPop(); } });
@@ -3891,6 +3929,7 @@ $('#actPop').addEventListener('click', e => {
   const a = b.dataset.a;
   if (a === 'grid') { S.grid = !S.grid; dirty = true; savePrefs(); paintActPop(); return; }
   if (a === 'finger') { S.fingerDraws = !S.fingerDraws; savePrefs(); paintActPop(); return; }
+  if (a === 'ref') { closeMiniPops(); setRefOpen(!REF.open); if (REF.open && REF.mode === 'img' && !REF.img) $('#fileRef').click(); return; }
   closeMiniPops();
   if (a === 'import') $('#fileImg').click();
   else if (a === 'vid') $('#fileVid').click();
@@ -3900,6 +3939,7 @@ $('#actPop').addEventListener('click', e => {
   else if (a === 'export') openExport();
   else if (a === 'gif') openExport('gif');
   else if (a === 'save') saveProjectFile();
+  else if (a === 'ase') saveAseprite();
 });
 $('#adjBtn').addEventListener('click', () => toggleMini('#adjPop'));
 $('#adjPop').addEventListener('click', e => {
@@ -5354,7 +5394,7 @@ async function offerFile(filename, data) {
       return false;
     }
   }
-  const type = filename.endsWith('.json') ? 'application/json' : filename.endsWith('.gif') ? 'image/gif' : 'image/png';
+  const type = filename.endsWith('.json') ? 'application/json' : filename.endsWith('.gif') ? 'image/gif' : filename.endsWith('.aseprite') ? 'application/octet-stream' : 'image/png';
   const blob = data instanceof Blob ? data : new Blob([data], { type });
   const file = new File([blob], filename, { type: blob.type || type });
   // iPad und iPhone: Teilen-Menü, dort „In Dateien sichern“
@@ -5387,7 +5427,8 @@ async function saveProjectFile() {
     const R = sheetRGBA('grid', cols, 1, S.frames, l.id);
     layers.push({ name: l.name, visible: l.visible, sheet: await blobToDataUrl(await rgbaToPng(R.data, R.W, R.H)) });
   }
-  const json = JSON.stringify({ app: 'Pixelwerk', version: 4, w: S.w, h: S.h, fps: S.fps, count: S.frames.length, cols, layers });
+  const ref = REF.bytes ? { ...refMeta(), data: await blobToDataUrl(new Blob([REF.bytes], { type: REF.mime || 'image/png' })) } : (REF.open ? refMeta() : undefined);
+  const json = JSON.stringify({ app: 'Pixelwerk', version: 4, w: S.w, h: S.h, fps: S.fps, count: S.frames.length, cols, layers, ref });
   const p = PROJ.active;
   const ok = await offerFile(`${safeName(p ? p.name : EX.name)}.pixelwerk.json`, json);
   if (ok && p) { p.dirty = false; renderTabs(); saveTabsSoon(); }
@@ -5415,18 +5456,186 @@ async function readProject(obj) {
   } else specs.push({ name: 'Ebene 1', visible: true, datas: await dataUrlToFrames(obj.sheet, w, h, n) });
   if (!specs.length) throw new Error('leer');
   for (const s of specs) if (s.datas) while (s.datas.length < n) s.datas.push(null);
-  return { w, h, fps: clamp(obj.fps | 0 || 8, 1, 60), specs };
+  let ref = null;
+  if (obj.ref && typeof obj.ref === 'object') {
+    ref = { open: !!obj.ref.open, mode: obj.ref.mode, box: obj.ref.box, view: obj.ref.view };
+    const m = typeof obj.ref.data === 'string' && /^data:(image\/(png|jpeg));base64,/.exec(obj.ref.data);
+    if (m) { const bin = atob(obj.ref.data.slice(obj.ref.data.indexOf(',') + 1)), b = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) b[i] = bin.charCodeAt(i); ref.bytes = b; ref.mime = m[1]; }
+  }
+  return { w, h, fps: clamp(obj.fps | 0 || 8, 1, 60), specs, ref };
 }
 $('#fileProj').addEventListener('change', async e => {
   const file = e.target.files[0]; e.target.value = '';
   if (!file) return;
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  if (isAseprite(bytes)) {
+    try {
+      if (!HAS_ZLIB) throw new Error('format');
+      const p = await readAseprite(bytes);
+      const name = file.name.replace(/\.(aseprite|ase)$/i, '').slice(0, 40) || 'Aseprite';
+      openProjectTab(name, () => { newProject(p.w, p.h, p.specs); setFps(p.fps); });
+      toast(p.mixed ? `Aseprite-Datei geöffnet. Unterschiedliche Frame-Längen: ${p.fps} fps für alle` : 'Aseprite-Datei geöffnet', 3200);
+    } catch (err) { toast(err && err.message === 'size' ? 'Größer als 512 px geht nicht' : 'Diese Aseprite-Datei konnte nicht gelesen werden', 2800); }
+    return;
+  }
   try {
-    const p = await readProject(JSON.parse(await file.text()));
+    const p = await readProject(JSON.parse(new TextDecoder().decode(bytes)));
     const name = file.name.replace(/\.pixelwerk\.json$|\.json$/i, '').slice(0, 40) || 'Projekt';
     openProjectTab(name, () => { newProject(p.w, p.h, p.specs); setFps(p.fps); });
+    if (p.ref) { restoreRef(p.ref); if (p.ref.bytes) saveRefImage(PROJ.active.id, p.ref.bytes, p.ref.mime); scheduleSave([], true); }
     toast('Projekt in neuem Tab geöffnet');
   } catch (err) { toast('Diese Datei ist kein Pixelwerk-Projekt', 2400); }
 });
+
+/* ---------- Aseprite-Dateien (.aseprite / .ase), Beta ----------
+   Nach der offiziellen Dateibeschreibung von Aseprite (ase-file-specs.md).
+   Lesen: RGBA, Graustufen und indiziert; Bild-Ebenen, Gruppen (werden flach gemacht, Sichtbarkeit wird vererbt),
+   rohe, komprimierte und verknüpfte Cels, Ebenen- und Cel-Deckkraft (wird in die Pixel eingerechnet).
+   Nicht übernommen: Füllmethoden, Tags, Slices, Tilemaps, Referenz-Ebenen.
+   Schreiben: RGBA, eine Ebene pro Pixelwerk-Ebene, komprimierte Cels; Skelett-Posen werden eingebacken. */
+const isAseprite = b => b.length >= 128 && b[4] === 0xE0 && b[5] === 0xA5;
+async function readAseprite(bytes) {
+  const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  const u16 = o => dv.getUint16(o, true), i16 = o => dv.getInt16(o, true), u32 = o => dv.getUint32(o, true);
+  const td = new TextDecoder();
+  const str = o => { const len = u16(o); return [td.decode(bytes.subarray(o + 2, o + 2 + len)), o + 2 + len]; };
+  const n = u16(6), w = u16(8), h = u16(10), depth = u16(12), hflags = u32(14), transIdx = bytes[28];
+  if (!n || w < 1 || h < 1) throw new Error('format');
+  if (w > 512 || h > 512) throw new Error('size');
+  if (depth !== 32 && depth !== 16 && depth !== 8) throw new Error('format');
+  const layers = [], frames = [], durs = [], pal = new Uint8Array(256 * 4);
+  let off = 128;
+  for (let f = 0; f < n; f++) {
+    const fsize = u32(off);
+    if (u16(off + 4) !== 0xF1FA || fsize < 16) throw new Error('format');
+    const nch = u32(off + 12) || u16(off + 6);
+    durs.push(u16(off + 8) || 100);
+    const fc = new Map(); frames.push(fc);
+    let co = off + 16;
+    for (let c = 0; c < nch && co + 6 <= off + fsize; c++) {
+      const csize = u32(co), type = u16(co + 4), d = co + 6;
+      if (csize < 6) throw new Error('format');
+      if (type === 0x2004) { // Ebene
+        layers.push({ flags: u16(d), type: u16(d + 2), level: u16(d + 4), opacity: hflags & 1 ? bytes[d + 12] : 255, name: str(d + 16)[0] });
+      } else if (type === 0x2005) { // Cel
+        const li = u16(d), x = i16(d + 2), y = i16(d + 4), op = bytes[d + 6], ct = u16(d + 7), p = d + 16;
+        if (ct === 1) fc.set(li, { link: u16(p), op });
+        else if (ct === 0 || ct === 2) {
+          const cw = u16(p), ch = u16(p + 2);
+          let raw = bytes.subarray(p + 4, co + csize);
+          if (ct === 2) raw = await zlib(raw, 'in');
+          const bg = layers[li] && (layers[li].flags & 8), out = new Uint8ClampedArray(cw * ch * 4);
+          for (let i = 0, m = cw * ch; i < m; i++) {
+            const o = i * 4;
+            if (depth === 32) { out[o] = raw[o]; out[o + 1] = raw[o + 1]; out[o + 2] = raw[o + 2]; out[o + 3] = raw[o + 3]; }
+            else if (depth === 16) { const v = raw[i * 2]; out[o] = out[o + 1] = out[o + 2] = v; out[o + 3] = raw[i * 2 + 1]; }
+            else { const q = raw[i]; if (q === transIdx && !bg) continue; out[o] = pal[q * 4]; out[o + 1] = pal[q * 4 + 1]; out[o + 2] = pal[q * 4 + 2]; out[o + 3] = pal[q * 4 + 3]; }
+          }
+          fc.set(li, { x, y, w: cw, h: ch, data: out, op });
+        }
+      } else if (type === 0x2019) { // Palette (neu)
+        const first = u32(d + 4), last = u32(d + 8);
+        let q = d + 20;
+        for (let i = first; i <= last && i < 256; i++) {
+          const fl = u16(q); pal.set(bytes.subarray(q + 2, q + 6), i * 4); q += 6;
+          if (fl & 1) q = str(q)[1];
+        }
+      } else if ((type === 0x0004 || type === 0x0011) && !layers.length) { // Palette (alt), nur wenn noch keine neue kam
+        let q = d + 2, idx = 0;
+        for (let pk = u16(d); pk > 0; pk--) {
+          idx += bytes[q]; const cnt = bytes[q + 1] || 256; q += 2;
+          for (let i = 0; i < cnt && idx < 256; i++, idx++, q += 3) {
+            const k = type === 0x0011 ? 255 / 63 : 1;
+            pal[idx * 4] = Math.round(bytes[q] * k); pal[idx * 4 + 1] = Math.round(bytes[q + 1] * k); pal[idx * 4 + 2] = Math.round(bytes[q + 2] * k); pal[idx * 4 + 3] = 255;
+          }
+        }
+      }
+      co += csize;
+    }
+    off += fsize;
+  }
+  // Sichtbarkeit über Gruppen vererben; nur Bild-Ebenen übernehmen (Index = Reihenfolge der Ebenen-Chunks, unten zuerst)
+  const visAt = [], specs = [];
+  layers.forEach((l, li) => {
+    const vis = !!(l.flags & 1) && (l.level === 0 || visAt[l.level - 1] !== false);
+    visAt[l.level] = vis; visAt.length = l.level + 1;
+    if (l.type !== 0 || (l.flags & 64)) return; // Gruppen, Tilemaps und Referenz-Ebenen überspringen
+    const datas = frames.map((fc, fi) => {
+      let cel = fc.get(li), guard = 0;
+      while (cel && cel.link !== undefined && guard++ < 8) cel = frames[cel.link] && frames[cel.link].get(li);
+      if (!cel || !cel.data) return null;
+      const op = (fc.get(li).op / 255) * (l.opacity / 255), out = new Uint8ClampedArray(w * h * 4);
+      let any = false;
+      for (let y = 0; y < cel.h; y++) {
+        const Y = cel.y + y; if (Y < 0 || Y >= h) continue;
+        for (let x = 0; x < cel.w; x++) {
+          const X = cel.x + x; if (X < 0 || X >= w) continue;
+          const s = (y * cel.w + x) * 4, a = Math.round(cel.data[s + 3] * op);
+          if (!a) continue;
+          const o = (Y * w + X) * 4;
+          out[o] = cel.data[s]; out[o + 1] = cel.data[s + 1]; out[o + 2] = cel.data[s + 2]; out[o + 3] = a; any = true;
+        }
+      }
+      return any ? out : null;
+    });
+    specs.push({ name: (l.name || `Ebene ${specs.length + 1}`).slice(0, 40), visible: vis, datas });
+  });
+  if (!specs.length) specs.push({ name: 'Ebene 1', visible: true, datas: frames.map(() => null) });
+  // Pixelwerk kennt eine Bildrate für alle Frames: die häufigste Frame-Länge
+  const cnt = new Map(); durs.forEach(t => cnt.set(t, (cnt.get(t) || 0) + 1));
+  const common = [...cnt].sort((a, b) => b[1] - a[1])[0][0];
+  return { w, h, fps: clamp(Math.round(1000 / common), 1, 60), specs, mixed: cnt.size > 1 };
+}
+async function writeAseprite() {
+  const n = S.frames.length, w = S.w, h = S.h, dur = Math.round(1000 / S.fps), te = new TextEncoder();
+  const pix = S.layers.map((l, li) => ({ l, li })).filter(x => x.l.kind !== 'skel');
+  const cols = projectColors().slice(0, 256);
+  if (!cols.length) cols.push(pack(0, 0, 0));
+  // Ein Chunk: Größe (inkl. 6 Byte Kopf), Typ, Inhalt; fill schreibt den Inhalt über DataView ab Byte 6
+  const chunk = (type, len, fill) => { const b = new Uint8Array(6 + len), v = new DataView(b.buffer); v.setUint32(0, 6 + len, true); v.setUint16(4, type, true); fill(v, b); return b; };
+  const frames = [];
+  for (let fi = 0; fi < n; fi++) {
+    const fid = S.frames[fi].id, chunks = [];
+    if (fi === 0) {
+      // Alte Palette (0x0004) für ältere Programme, neue Palette (0x2019), dann die Ebenen
+      chunks.push(chunk(0x0004, 4 + cols.length * 3, (v, b) => { v.setUint16(6, 1, true); b[8] = 0; b[9] = cols.length === 256 ? 0 : cols.length; cols.forEach((u, i) => { b[10 + i * 3] = u & 255; b[11 + i * 3] = (u >>> 8) & 255; b[12 + i * 3] = (u >>> 16) & 255; }); }));
+      chunks.push(chunk(0x2019, 20 + cols.length * 6, (v, b) => { v.setUint32(6, cols.length, true); v.setUint32(10, 0, true); v.setUint32(14, cols.length - 1, true); cols.forEach((u, i) => { const o = 26 + i * 6; v.setUint16(o, 0, true); b[o + 2] = u & 255; b[o + 3] = (u >>> 8) & 255; b[o + 4] = (u >>> 16) & 255; b[o + 5] = 255; }); }));
+      for (const { l } of pix) {
+        const name = te.encode(l.name);
+        chunks.push(chunk(0x2004, 18 + name.length, (v, b) => { v.setUint16(6, (l.visible ? 1 : 0) | 2, true); b[18] = 255; v.setUint16(22, name.length, true); b.set(name, 24); }));
+      }
+    }
+    for (let ei = 0; ei < pix.length; ei++) {
+      const { l, li } = pix[ei];
+      let d = cels.get(key(fid, l.id));
+      if (!d) continue;
+      const sl = skelAbove(li);
+      if (sl) d = deformed(fid, l, sl, d); // Pose einbacken
+      const b = pixelBounds(d); if (!b) continue;
+      const cw = b.x1 - b.x0 + 1, ch = b.y1 - b.y0 + 1, raw = new Uint8Array(cw * ch * 4);
+      for (let y = 0; y < ch; y++) raw.set(d.subarray(((b.y0 + y) * w + b.x0) * 4, ((b.y0 + y) * w + b.x1 + 1) * 4), y * cw * 4);
+      const z = await zlib(raw, 'out');
+      chunks.push(chunk(0x2005, 20 + z.length, (v, buf) => { v.setUint16(6, ei, true); v.setInt16(8, b.x0, true); v.setInt16(10, b.y0, true); buf[12] = 255; v.setUint16(13, 2, true); v.setUint16(22, cw, true); v.setUint16(24, ch, true); buf.set(z, 26); }));
+    }
+    const size = 16 + chunks.reduce((s, c) => s + c.length, 0), fh = new Uint8Array(16), v = new DataView(fh.buffer);
+    v.setUint32(0, size, true); v.setUint16(4, 0xF1FA, true); v.setUint16(6, Math.min(chunks.length, 0xFFFF), true); v.setUint16(8, dur, true); v.setUint32(12, chunks.length, true);
+    frames.push(fh, ...chunks);
+  }
+  const total = 128 + frames.reduce((s, c) => s + c.length, 0), head = new Uint8Array(128), v = new DataView(head.buffer);
+  v.setUint32(0, total, true); v.setUint16(4, 0xA5E0, true); v.setUint16(6, n, true); v.setUint16(8, w, true); v.setUint16(10, h, true);
+  v.setUint16(12, 32, true); v.setUint32(14, 1, true); v.setUint16(18, dur, true);
+  v.setUint16(32, cols.length === 256 ? 0 : cols.length, true); head[34] = 1; head[35] = 1; v.setUint16(40, 16, true); v.setUint16(42, 16, true);
+  const out = new Uint8Array(total); let o = 0;
+  for (const part of [head, ...frames]) { out.set(part, o); o += part.length; }
+  return out;
+}
+async function saveAseprite() {
+  if (!HAS_ZLIB) { toast('Speichern hat nicht geklappt', 2400); return; }
+  if (TR) commitTransform();
+  const bytes = await writeAseprite();
+  const p = PROJ.active;
+  await offerFile(`${safeName(p ? p.name : EX.name)}.aseprite`, new Blob([bytes], { type: 'application/octet-stream' }));
+}
 
 /* ---------- Automatisch im Browser sichern (IndexedDB) ----------
    Mehrere Projekte: Bilddaten unter „Projekt-ID|Frame:Ebene“, Projektdaten unter „p:Projekt-ID“, die Tabs unter „tabs“. */
@@ -5454,7 +5663,7 @@ function scheduleSave(keys = [], meta = true) {
   updateButtons();
 }
 function projectMeta() {
-  return { v: 2, w: S.w, h: S.h, fps: S.fps, frames: S.frames.map(f => f.id), layers: S.layers.map(l => ({ id: l.id, name: l.name, visible: l.visible, kind: l.kind || 'pixel', bones: l.bones, fill: l.fill })), layer: S.layer, cur: S.cur, skMode: SKM.mode };
+  return { v: 2, w: S.w, h: S.h, fps: S.fps, frames: S.frames.map(f => f.id), layers: S.layers.map(l => ({ id: l.id, name: l.name, visible: l.visible, kind: l.kind || 'pixel', bones: l.bones, fill: l.fill })), layer: S.layer, cur: S.cur, skMode: SKM.mode, ref: refMeta() };
 }
 // Nimmt die anstehenden Änderungen des aktiven Projekts sofort auf und schreibt sie danach der Reihe nach
 function flushSave() {
@@ -5495,7 +5704,7 @@ function saveTabs() {
 }
 function saveTabsSoon() { clearTimeout(tabsTimer); tabsTimer = setTimeout(saveTabs, 300); }
 function deleteProjectStore(pid) {
-  saveChain = saveChain.then(async () => { const db = await idbOpen(); const tx = db.transaction(['frames', 'meta'], 'readwrite'); tx.objectStore('frames').delete(pidRange(pid)); tx.objectStore('meta').delete('p:' + pid); await txDone(tx); }).catch(() => {});
+  saveChain = saveChain.then(async () => { const db = await idbOpen(); const tx = db.transaction(['frames', 'meta'], 'readwrite'); tx.objectStore('frames').delete(pidRange(pid)); tx.objectStore('meta').delete('p:' + pid); tx.objectStore('meta').delete('r:' + pid); await txDone(tx); }).catch(() => {});
 }
 document.addEventListener('visibilitychange', () => { if (document.hidden) { flushSave(); saveTabs(); savePrefs(); } });
 // Liest ein gespeichertes Projekt als Zustand, ohne es zu öffnen (legacy = Speicherstand ohne Tabs)
@@ -5503,14 +5712,16 @@ async function readProjectStore(pid, legacy = false) {
   await saveChain;
   const db = await idbOpen();
   const tx = db.transaction(['frames', 'meta']), fs = tx.objectStore('frames'), ms = tx.objectStore('meta');
-  let meta, keys, vals;
+  let meta, keys, vals, refRec = null;
   if (legacy) [meta, keys, vals] = await Promise.all([reqP(ms.get('project')), reqP(fs.getAllKeys()), reqP(fs.getAll())]);
   else {
-    [meta, keys, vals] = await Promise.all([reqP(ms.get('p:' + pid)), reqP(fs.getAllKeys(pidRange(pid))), reqP(fs.getAll(pidRange(pid)))]);
+    [meta, keys, vals, refRec] = await Promise.all([reqP(ms.get('p:' + pid)), reqP(fs.getAllKeys(pidRange(pid))), reqP(fs.getAll(pidRange(pid))), reqP(ms.get('r:' + pid))]);
     keys = keys.map(k => k.slice(pid.length + 1));
   }
   if (!meta) return null;
-  return parseStored(meta, new Map(keys.map((k, i) => [k, vals[i]])));
+  const st = parseStored(meta, new Map(keys.map((k, i) => [k, vals[i]])));
+  if (st && meta.ref) st.ref = { ...meta.ref, bytes: refRec && refRec.bytes, mime: refRec && refRec.mime };
+  return st;
 }
 function parseStored(meta, map) {
   const w = meta.w | 0, h = meta.h | 0, len = w * h * 4;
@@ -5544,6 +5755,243 @@ function parseStored(meta, map) {
   return st;
 }
 
+/* ---------- Referenzfenster ----------
+   Schwebendes Fenster über der Bühne. Modus „Bild“: ein Referenzbild, mit einem Finger verschieben, mit zwei Fingern zoomen.
+   Modus „Leinwand“: zeigt live die Leinwand in Originalgröße bzw. ganzzahlig vergrößert (spielt Animationen mit).
+   Finger gedrückt halten nimmt in beiden Modi eine Farbe auf. Das Fenster gehört zum Projekt und wird mit ihm gespeichert. */
+const blankRef = () => ({ open: false, mode: 'img', box: null, view: null, img: null, data: null, bytes: null, mime: null });
+let REF = blankRef();
+const refWin = $('#refWin'), refCv = $('#refCv'), refCtx = refCv.getContext('2d');
+const REFI = { ptrs: new Map(), hold: null, eye: null, pinch: null, drag: null, lastTap: 0 }; // laufende Eingabe im Fenster
+function refDefaultBox() {
+  const w = Math.round(clamp(V.SW * .34, 220, 380)), h = Math.round(w * .85) + 44;
+  return { x: Math.round(V.SW - w - 16), y: 64, w, h };
+}
+// Fenster innerhalb der Bühne halten
+function placeRef() {
+  if (!REF.open || !V.SW) { refWin.hidden = true; return; } // ohne Bühnengröße kommt placeRef aus resize() noch einmal
+  if (!REF.box) REF.box = refDefaultBox();
+  const b = REF.box;
+  b.w = clamp(b.w, 180, Math.max(180, V.SW - 16)); b.h = clamp(b.h, 150, Math.max(150, V.SH - 16));
+  b.x = clamp(b.x, 8 - b.w + 80, V.SW - 80); b.y = clamp(b.y, 0, V.SH - 44);
+  refWin.hidden = false;
+  Object.assign(refWin.style, { left: b.x + 'px', top: b.y + 'px', width: b.w + 'px', height: b.h + 'px' });
+  document.querySelectorAll('#refMode button').forEach(x => x.classList.toggle('on', x.dataset.rm === REF.mode));
+  $('#refEmpty').hidden = REF.mode !== 'img' || !!REF.img;
+  $('#refOpen').hidden = REF.mode !== 'img';
+  drawRef();
+}
+function refFit() {
+  if (!REF.img) return;
+  const bw = refCv.clientWidth, bh = refCv.clientHeight;
+  const s = Math.min(bw / REF.img.width, bh / REF.img.height);
+  REF.view = { s, ox: (bw - REF.img.width * s) / 2, oy: (bh - REF.img.height * s) / 2 };
+}
+// Maßstab und Lage der Leinwand im Modus „Leinwand“
+function refLiveGeom() {
+  const bw = refCv.clientWidth, bh = refCv.clientHeight, f = Math.min(bw / S.w, bh / S.h);
+  const s = f >= 1 ? Math.floor(f) : f;
+  return { s, ox: Math.round((bw - S.w * s) / 2), oy: Math.round((bh - S.h * s) / 2) };
+}
+function drawRef() {
+  if (!REF.open || refWin.hidden) return;
+  const dpr = window.devicePixelRatio || 1, bw = refCv.clientWidth, bh = refCv.clientHeight;
+  const W = Math.max(1, Math.round(bw * dpr)), H = Math.max(1, Math.round(bh * dpr));
+  if (refCv.width !== W || refCv.height !== H) { refCv.width = W; refCv.height = H; }
+  const c = refCtx;
+  c.setTransform(1, 0, 0, 1, 0, 0); c.clearRect(0, 0, W, H); c.setTransform(dpr, 0, 0, dpr, 0, 0);
+  if (REF.mode === 'live') {
+    const g = refLiveGeom();
+    c.imageSmoothingEnabled = false;
+    c.drawImage(chk, g.ox, g.oy, S.w * g.s, S.h * g.s);
+    c.drawImage(art, g.ox, g.oy, S.w * g.s, S.h * g.s);
+  } else if (REF.img) {
+    if (!REF.view) refFit();
+    const v = REF.view;
+    c.imageSmoothingEnabled = v.s < 1; c.imageSmoothingQuality = 'high';
+    c.drawImage(REF.img, v.ox, v.oy, REF.img.width * v.s, REF.img.height * v.s);
+  }
+  const e = REFI.eye;
+  if (e) {
+    // Ring wie bei der Pipette auf der Leinwand: oben die Farbe unter dem Finger, unten die bisherige
+    const R = 40, wid = 14;
+    c.lineWidth = wid + 4; c.strokeStyle = 'rgba(0,0,0,.45)'; c.beginPath(); c.arc(e.x, e.y, R, 0, Math.PI * 2); c.stroke();
+    c.lineWidth = wid;
+    c.strokeStyle = css(e.cur || e.prev); c.beginPath(); c.arc(e.x, e.y, R, Math.PI, Math.PI * 2); c.stroke();
+    c.strokeStyle = css(e.prev); c.beginPath(); c.arc(e.x, e.y, R, 0, Math.PI); c.stroke();
+    c.lineWidth = 1.5; c.strokeStyle = 'rgba(255,255,255,.9)';
+    c.beginPath(); c.arc(e.x, e.y, R - wid / 2, 0, Math.PI * 2); c.stroke();
+    c.beginPath(); c.arc(e.x, e.y, R + wid / 2, 0, Math.PI * 2); c.stroke();
+  }
+}
+// Farbe unter einem Punkt im Fenster (CSS-Pixel relativ zum Fenster-Canvas) oder null
+function refSample(x, y) {
+  if (REF.mode === 'live') {
+    const g = refLiveGeom(), px = Math.floor((x - g.ox) / g.s), py = Math.floor((y - g.oy) / g.s);
+    if (!inside(px, py)) return null;
+    const u = compositePixel(S.playing ? S.frames[S.playIdx].id : curFrame().id, py * S.w + px);
+    return u >>> 24 ? (u | 0xff000000) >>> 0 : null;
+  }
+  if (!REF.data || !REF.view) return null; // Bild noch nicht geladen
+  const v = REF.view, px = Math.floor((x - v.ox) / v.s), py = Math.floor((y - v.oy) / v.s);
+  if (px < 0 || py < 0 || px >= REF.data.width || py >= REF.data.height) return null;
+  const i = (py * REF.data.width + px) * 4, d = REF.data.data;
+  return d[i + 3] ? pack(d[i], d[i + 1], d[i + 2]) >>> 0 : null;
+}
+const refPt = e => { const r = refCv.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
+function refSaveSoon() { scheduleSave([], true); }
+function setRefOpen(open) {
+  REF.open = open;
+  if (open && !REF.box) REF.box = refDefaultBox();
+  placeRef(); refSaveSoon();
+  if ($('#actPop [data-a="ref"]')) $('#actPop [data-a="ref"]').setAttribute('aria-pressed', String(REF.open));
+}
+// Bilddaten (Bytes) in ein Referenzfenster r laden; fit: Ansicht neu einpassen.
+// r ist das Fenster des Projekts, das beim Start des Ladens aktiv war (falls inzwischen der Tab gewechselt wurde)
+async function refLoadBytes(r, bytes, mime, fit) {
+  const url = URL.createObjectURL(new Blob([bytes], { type: mime }));
+  try {
+    const img = new Image(); img.src = url; await img.decode();
+    const c = document.createElement('canvas'); c.width = img.naturalWidth; c.height = img.naturalHeight;
+    const x = c.getContext('2d'); x.drawImage(img, 0, 0);
+    r.img = c; r.data = x.getImageData(0, 0, c.width, c.height); r.bytes = bytes; r.mime = mime;
+    if (fit) r.view = null; // wird beim Zeichnen eingepasst
+    if (r === REF) placeRef();
+  } finally { URL.revokeObjectURL(url); }
+}
+// Neues Referenzbild aus einer Datei: große Fotos auf höchstens 2048 px verkleinern, dann speichern
+async function refFromFile(file) {
+  const url = URL.createObjectURL(file);
+  try {
+    const img = new Image(); img.src = url; await img.decode();
+    const k = Math.min(1, 2048 / Math.max(img.naturalWidth, img.naturalHeight));
+    const c = document.createElement('canvas'); c.width = Math.max(1, Math.round(img.naturalWidth * k)); c.height = Math.max(1, Math.round(img.naturalHeight * k));
+    const x = c.getContext('2d'); x.imageSmoothingEnabled = k < 1; x.imageSmoothingQuality = 'high'; x.drawImage(img, 0, 0, c.width, c.height);
+    const photo = /jpe?g|heic|heif/i.test(file.type) || /\.(jpe?g|heic|heif)$/i.test(file.name);
+    const mime = photo ? 'image/jpeg' : 'image/png';
+    const blob = await new Promise(res => c.toBlob(res, mime, .9));
+    const bytes = new Uint8Array(await blob.arrayBuffer());
+    REF.mode = 'img';
+    await refLoadBytes(REF, bytes, mime, true);
+    if (PROJ.active) saveRefImage(PROJ.active.id, bytes, mime);
+    refSaveSoon(); markFileDirty();
+  } catch (err) { toast('Das Bild konnte nicht gelesen werden', 2400); }
+  finally { URL.revokeObjectURL(url); }
+}
+function saveRefImage(pid, bytes, mime) {
+  saveChain = saveChain.then(async () => { const db = await idbOpen(); const tx = db.transaction('meta', 'readwrite'); tx.objectStore('meta').put({ bytes, mime }, 'r:' + pid); await txDone(tx); }).catch(() => {});
+}
+const refMeta = () => ({ open: REF.open, mode: REF.mode, box: REF.box, view: REF.view });
+// Stellt ein gespeichertes Referenzfenster wieder her (aus dem Browser-Speicher oder einer Projektdatei)
+function restoreRef(r) {
+  REF = blankRef();
+  if (r) {
+    REF.open = !!r.open; REF.mode = r.mode === 'live' ? 'live' : 'img';
+    if (r.box && isFinite(r.box.x)) REF.box = { x: +r.box.x, y: +r.box.y, w: +r.box.w, h: +r.box.h };
+    if (r.view && isFinite(r.view.s) && r.view.s > 0) REF.view = { s: +r.view.s, ox: +r.view.ox, oy: +r.view.oy };
+    if (r.bytes) refLoadBytes(REF, r.bytes, r.mime || 'image/png', !REF.view).catch(() => {});
+  }
+  placeRef();
+}
+
+$('#refMode').addEventListener('click', e => { const b = e.target.closest('[data-rm]'); if (!b) return; REF.mode = b.dataset.rm; placeRef(); refSaveSoon(); });
+$('#refOpen').addEventListener('click', () => $('#fileRef').click());
+$('#refPick').addEventListener('click', () => $('#fileRef').click());
+$('#refClose').addEventListener('click', () => setRefOpen(false));
+$('#fileRef').addEventListener('change', e => { const f = e.target.files[0]; e.target.value = ''; if (f) refFromFile(f); });
+// Fenster am Kopf verschieben und an der Ecke vergrößern
+function refDragStart(e, kind) {
+  if (e.target.closest('button')) return;
+  e.preventDefault(); e.stopPropagation();
+  const b = REF.box; REFI.drag = { id: e.pointerId, kind, x0: e.clientX, y0: e.clientY, b0: { ...b } };
+  e.currentTarget.setPointerCapture(e.pointerId);
+}
+function refDragMove(e) {
+  const d = REFI.drag; if (!d || d.id !== e.pointerId) return;
+  const dx = e.clientX - d.x0, dy = e.clientY - d.y0;
+  if (d.kind === 'move') { REF.box.x = d.b0.x + dx; REF.box.y = d.b0.y + dy; }
+  else { REF.box.w = d.b0.w + dx; REF.box.h = d.b0.h + dy; } // die Bildlage bleibt, das Fenster schneidet nur anders zu
+  placeRef();
+}
+function refDragEnd(e) { if (REFI.drag && REFI.drag.id === e.pointerId) { REFI.drag = null; refSaveSoon(); } }
+for (const [el, kind] of [[$('#refGrab'), 'move'], [$('#refHead'), 'move'], [$('#refGrip'), 'size']]) {
+  el.addEventListener('pointerdown', e => refDragStart(e, kind));
+  el.addEventListener('pointermove', refDragMove);
+  el.addEventListener('pointerup', refDragEnd); el.addEventListener('pointercancel', refDragEnd);
+}
+// Eingabe im Bild: ein Finger verschiebt, zwei Finger zoomen, gedrückt halten nimmt eine Farbe auf, doppelt tippen passt ein
+function refEyeEnd(apply) {
+  const e = REFI.eye; REFI.eye = null; drawRef();
+  if (!apply || !e) return;
+  if (!e.cur) { toast('Dort ist kein Pixel'); return; }
+  takePickedColor(e.cur);
+}
+refCv.addEventListener('pointerdown', e => {
+  e.preventDefault();
+  refCv.setPointerCapture(e.pointerId);
+  const p = refPt(e);
+  REFI.ptrs.set(e.pointerId, p);
+  clearTimeout(REFI.hold && REFI.hold.timer); REFI.hold = null;
+  if (REFI.ptrs.size === 2) {
+    if (REFI.eye) refEyeEnd(false);
+    const [a, b] = [...REFI.ptrs.values()];
+    REFI.pinch = REF.mode === 'img' && REF.view ? { d0: Math.hypot(a.x - b.x, a.y - b.y) || 1, m0: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }, v0: { ...REF.view } } : null;
+    return;
+  }
+  if (REFI.ptrs.size > 2) return;
+  REFI.pan = { x: p.x, y: p.y, v0: REF.view ? { ...REF.view } : null, moved: 0 };
+  REFI.hold = { x: p.x, y: p.y, timer: setTimeout(() => {
+    REFI.hold = null;
+    if (REFI.ptrs.size !== 1) return;
+    REFI.eye = { x: p.x, y: p.y, prev: S.color, cur: refSample(p.x, p.y) };
+    const q = REFI.ptrs.get(e.pointerId); if (q) { REFI.eye.x = q.x; REFI.eye.y = q.y; REFI.eye.cur = refSample(q.x, q.y) || REFI.eye.cur; }
+    drawRef();
+  }, 450) };
+});
+refCv.addEventListener('pointermove', e => {
+  if (!REFI.ptrs.has(e.pointerId)) return;
+  const p = refPt(e); REFI.ptrs.set(e.pointerId, p);
+  if (REFI.eye) { REFI.eye.x = p.x; REFI.eye.y = p.y; const u = refSample(p.x, p.y); if (u) REFI.eye.cur = u; drawRef(); return; }
+  if (REFI.ptrs.size === 2 && REFI.pinch) {
+    const [a, b] = [...REFI.ptrs.values()], P = REFI.pinch;
+    const d = Math.hypot(a.x - b.x, a.y - b.y), m = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+    const s = clamp(P.v0.s * d / P.d0, .02, 64);
+    // Bildpunkt unter der Fingermitte bleibt unter der Fingermitte
+    const wx = (P.m0.x - P.v0.ox) / P.v0.s, wy = (P.m0.y - P.v0.oy) / P.v0.s;
+    REF.view = { s, ox: m.x - wx * s, oy: m.y - wy * s };
+    drawRef(); return;
+  }
+  const pan = REFI.pan; if (!pan || REFI.ptrs.size !== 1) return;
+  pan.moved = Math.max(pan.moved, Math.hypot(p.x - pan.x, p.y - pan.y));
+  if (pan.moved > 8 && REFI.hold) { clearTimeout(REFI.hold.timer); REFI.hold = null; }
+  if (REF.mode === 'img' && pan.v0 && pan.moved > 8) { REF.view = { s: pan.v0.s, ox: pan.v0.ox + p.x - pan.x, oy: pan.v0.oy + p.y - pan.y }; drawRef(); }
+});
+function refPtrEnd(e) {
+  if (!REFI.ptrs.has(e.pointerId)) return;
+  REFI.ptrs.delete(e.pointerId);
+  if (REFI.hold) { clearTimeout(REFI.hold.timer); REFI.hold = null; }
+  if (REFI.eye) { refEyeEnd(e.type !== 'pointercancel'); return; }
+  if (REFI.ptrs.size === 0) {
+    const pan = REFI.pan;
+    if (pan && pan.moved <= 8 && e.type !== 'pointercancel') {
+      const t = performance.now();
+      if (t - REFI.lastTap < 320 && REF.mode === 'img') { refFit(); drawRef(); REFI.lastTap = 0; } else REFI.lastTap = t;
+    }
+    if (REFI.pinch || (pan && pan.moved > 8)) refSaveSoon();
+    REFI.pan = null; REFI.pinch = null;
+  }
+}
+refCv.addEventListener('pointerup', refPtrEnd);
+refCv.addEventListener('pointercancel', refPtrEnd);
+refCv.addEventListener('wheel', e => {
+  e.preventDefault(); if (REF.mode !== 'img' || !REF.view) return;
+  const p = refPt(e), v = REF.view, s = clamp(v.s * (e.deltaY < 0 ? 1.15 : 1 / 1.15), .02, 64);
+  const wx = (p.x - v.ox) / v.s, wy = (p.y - v.oy) / v.s;
+  REF.view = { s, ox: p.x - wx * s, oy: p.y - wy * s }; drawRef(); refSaveSoon();
+}, { passive: false });
+refCv.addEventListener('contextmenu', e => e.preventDefault());
+new ResizeObserver(() => drawRef()).observe(refCv);
+
 /* ---------- Projekt-Tabs ----------
    Das aktive Projekt lebt in den normalen Variablen (S, cels, SK, Verlauf …).
    Inaktive Projekte liegen als Zustand im Speicher oder, wenn noch nie geöffnet, nur im Browser-Speicher. */
@@ -5555,7 +6003,7 @@ function nextUntitled() {
 }
 function captureState() {
   return { w: S.w, h: S.h, fps: S.fps, frames: S.frames, layers: S.layers, layer: S.layer, cur: S.cur, cels: new Map(cels), SK,
-    undo: undoStack.slice(), redo: redoStack.slice(), mask: SEL.mask, view: { s: V.s, ox: V.ox, oy: V.oy, r: V.r }, skMode: SKM.mode };
+    undo: undoStack.slice(), redo: redoStack.slice(), mask: SEL.mask, view: { s: V.s, ox: V.ox, oy: V.oy, r: V.r }, skMode: SKM.mode, liveRef: REF };
 }
 function applyState(st) {
   S.w = st.w; S.h = st.h; S.fps = st.fps; S.frames = st.frames; S.layers = st.layers; S.layer = st.layer; S.cur = st.cur;
@@ -5568,6 +6016,7 @@ function applyState(st) {
   if (st.view) { V.s = st.view.s; V.ox = st.view.ox; V.oy = st.view.oy; V.r = st.view.r || 0; V.fitted = true; }
   else { V.fitted = false; fit(); }
   if (st.reset) resetStore = true;
+  if (st.liveRef) { REF = st.liveRef; placeRef(); } else restoreRef(st.ref);
 }
 function blankState() {
   const f = { id: nextId++ }, l = { id: nextId++, name: 'Ebene 1', visible: true, kind: 'pixel' };
@@ -5608,6 +6057,7 @@ function openProjectTab(name, init, dirtyAfter = false) {
   PROJ.active = p;
   undoStack.length = 0; redoStack.length = 0;
   V.r = 0;
+  REF = blankRef(); placeRef();
   init();
   p.dirty = dirtyAfter;
   afterSwitch(); saveTabsSoon();

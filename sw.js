@@ -1,5 +1,5 @@
 // Service Worker: hält Pixelwerk offline verfügbar. Die Version ändert sich mit jedem neuen Build.
-const VERSION = 'pixelwerk-e66032c554';
+const VERSION = 'pixelwerk-5993d6eed2';
 const FILES = ["./", "index.html", "manifest.webmanifest", "icons/icon-180.png", "icons/icon-192.png", "icons/icon-512.png", "icons/icon-maskable-512.png"];
 const FONTS = 'pixelwerk-fonts';
 self.addEventListener('install', e => {

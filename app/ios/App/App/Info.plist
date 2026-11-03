@@ -36,8 +36,6 @@
 	<string>Pixelwerk opens images from your photo library only when you choose to import them.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>Pixelwerk saves exported images and animations to your photo library when you choose to.</string>
-	<key>LSRequiresIPhoneOS</key>
-	<true/>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
@@ -65,9 +63,12 @@
 	<array>
 		<string>armv7</string>
 	</array>
+	<key>LSRequiresIPhoneOS</key>
+	<true/>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationPortraitUpsideDown</string>
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>

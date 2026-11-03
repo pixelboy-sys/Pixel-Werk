@@ -6530,9 +6530,9 @@ function refEyeEnd(apply) {
   if (!e.cur) { toast('Dort ist kein Pixel'); return; }
   takePickedColor(e.cur);
 }
-refCv.addEventListener('pointerdown', e => {
+function refDown(e) {
   e.preventDefault();
-  refCv.setPointerCapture(e.pointerId);
+  try { refCv.setPointerCapture(e.pointerId); } catch (_) {}
   const p = refPt(e);
   REFI.ptrs.set(e.pointerId, p);
   clearTimeout(REFI.hold && REFI.hold.timer); REFI.hold = null;
@@ -6551,7 +6551,15 @@ refCv.addEventListener('pointerdown', e => {
     const q = REFI.ptrs.get(e.pointerId); if (q) { REFI.eye.x = q.x; REFI.eye.y = q.y; REFI.eye.cur = refSample(q.x, q.y) || REFI.eye.cur; }
     drawRef();
   }, 450) };
-});
+}
+refCv.addEventListener('pointerdown', refDown);
+// Hat eine Geste im Referenzbild begonnen, gehören weitere Finger dazu, auch wenn sie außerhalb des Fensters landen
+// (sonst würde der zweite Finger auf der Leinwand malen oder sie zoomen, statt das Bild zu zoomen)
+window.addEventListener('pointerdown', e => {
+  if (!REFI.ptrs.size || refWin.contains(e.target)) return;
+  e.stopPropagation();
+  refDown(e);
+}, true);
 refCv.addEventListener('pointermove', e => {
   if (!REFI.ptrs.has(e.pointerId)) return;
   const p = refPt(e); REFI.ptrs.set(e.pointerId, p);

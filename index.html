@@ -4470,7 +4470,9 @@ $('#tools').addEventListener('click', e => {
   if (t === S.tool && (t === 'pencil' || t === 'eraser')) { if (toggleMini('#brushPop')) renderBrushPop(); return; }
   closeMiniPops(); setTool(t);
 });
-$('#leftTools').addEventListener('click', e => { const b = e.target.closest('[data-tool]'); if (b) { closeMiniPops(); setTool(b.dataset.tool); } });
+// Auswahl ein- und ausschalten: zweites Antippen wechselt zurück zum vorherigen Werkzeug (die Auswahl selbst bleibt bestehen)
+function toggleSelectTool() { setTool(S.tool === 'select' ? (S.prevTool && S.prevTool !== 'select' ? S.prevTool : 'pencil') : 'select'); }
+$('#leftTools').addEventListener('click', e => { const b = e.target.closest('[data-tool]'); if (b) { closeMiniPops(); toggleSelectTool(); } });
 $('#eyeBtn').addEventListener('click', () => { closeMiniPops(); setTool(S.tool === 'picker' ? (S.prevTool || 'pencil') : 'picker'); });
 
 /* ---------- Kleine Menüs (Aktionen, Anpassungen, Animation, Frame) ---------- */
@@ -6933,6 +6935,7 @@ document.addEventListener('keydown', e => {
   if (e.key === 'ArrowRight') { selectFrame((S.cur + 1) % S.frames.length); return; }
   if (e.key === '[') { stepSize(-1); return; }
   if (e.key === ']') { stepSize(1); return; }
+  if (KEYS[k] === 'select') { toggleSelectTool(); return; }
   if (KEYS[k]) { setTool(KEYS[k]); return; }
   if (k === 'l') { $('#layersBtn').click(); return; }
   if (k === 'o') { $('#onionBtn').click(); return; }

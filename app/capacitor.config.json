@@ -1,0 +1,10 @@
+{
+  "appId": "io.github.pixelboysys.pixelwerk",
+  "appName": "Pixelwerk",
+  "webDir": "www",
+  "ios": {
+    "contentInset": "never",
+    "backgroundColor": "#121317",
+    "scrollEnabled": false
+  }
+}

@@ -1142,8 +1142,11 @@ function zoomAt(ns, cx, cy) {
   const wx = (cx - V.ox) / V.s, wy = (cy - V.oy) / V.s;
   V.s = ns; V.ox = cx - wx * ns; V.oy = cy - wy * ns; dirty = true;
 }
-function snapScale() {
-  if (V.s >= 1) zoomAt(Math.max(1, Math.round(V.s)), V.W / 2, V.H / 2);
+// Nach dem Zoomen: nur einrasten, wenn der Maßstab schon fast ganzzahlig ist (gleich große Pixel),
+// und zwar um den Punkt (cx, cy), damit das Bild unter den Fingern nicht wegspringt
+function snapScale(cx = V.W / 2, cy = V.H / 2) {
+  const n = Math.round(V.s);
+  if (V.s >= 1 && Math.abs(V.s - n) / n < .06) zoomAt(Math.max(1, n), cx, cy);
   V.ox = Math.round(V.ox); V.oy = Math.round(V.oy);
 }
 
@@ -1162,7 +1165,7 @@ cv.addEventListener('pointerdown', e => {
   const p = pt(e);
   try { cv.setPointerCapture(e.pointerId); } catch (_) {}
   const sp = scrPt(e);
-  ptrs.set(e.pointerId, { x: p.x, y: p.y, x0: p.x, y0: p.y, sx: sp.x, sy: sp.y, sx0: sp.x, sy0: sp.y, t0: performance.now(), type: e.pointerType });
+  ptrs.set(e.pointerId, { id: e.pointerId, x: p.x, y: p.y, x0: p.x, y0: p.y, sx: sp.x, sy: sp.y, sx0: sp.x, sy0: sp.y, t0: performance.now(), type: e.pointerType });
   closeColorPop(); closeLayers(); closeMiniPops();
   if (e.pointerType === 'pen' && !S.penKnown) {
     S.penKnown = true;
@@ -1233,12 +1236,16 @@ function pointerEnd(e) {
   ptrs.delete(e.pointerId);
   if (hold && hold.id === e.pointerId) clearHold();
   if (mode === 'gesture') {
-    if (touches().length === 0) {
+    const left = touches();
+    if (left.length === 0) {
       const dt = performance.now() - gest.t0;
       if (dt < 350 && gest.moved < 14) { if (gest.maxCount === 2) undo(); else if (gest.maxCount >= 3) redo(); }
-      else if (dt < 400 && gest.d && gest.d / gest.d0 < .7) { fit(); toast('Eingepasst'); } // schnell zusammenkneifen: einpassen und gerade richten
-      else snapScale();
+      else if (dt < 300 && gest.d && gest.d / gest.d0 < .5) { fit(); toast('Eingepasst'); } // schnell und kräftig zusammenkneifen: einpassen und gerade richten
+      else { const u = unrot(gest.m.x, gest.m.y); snapScale(u.x, u.y); }
       mode = null; gest = null;
+    } else if (left.length >= 2 && gest.ids.includes(e.pointerId)) {
+      // Einer der beiden Gesten-Finger ist weg, aber noch zwei andere liegen: mit diesem Paar nahtlos weitermachen
+      startGesture(gest);
     }
     return;
   }
@@ -1281,32 +1288,42 @@ document.addEventListener('gesturestart', e => e.preventDefault());
 document.addEventListener('gesturechange', e => e.preventDefault());
 
 // Zwei Finger: zoomen, verschieben und drehen. Der Bildpunkt unter der Fingermitte bleibt unter der Fingermitte.
-function startGesture() {
+// Die Geste hängt fest an den zwei Fingern, mit denen sie begonnen hat (sonst kann ein Fingertausch die Leinwand um 180° drehen).
+// Gedreht wird erst, wenn die Finger deutlich verdreht werden, damit reines Zoomen die Leinwand nicht schief stellt.
+const ROT_START = 15 * Math.PI / 180, ROT_SNAP = 4 * Math.PI / 180;
+function startGesture(prev = null) {
   const [a, b] = touches();
   mode = 'gesture';
   const m = { x: (a.sx + b.sx) / 2, y: (a.sy + b.sy) / 2 }, u = unrot(m.x, m.y);
-  gest = { d0: Math.hypot(a.sx - b.sx, a.sy - b.sy) || 1, a0: Math.atan2(b.sy - a.sy, b.sx - a.sx), r0: V.r, s0: V.s,
-    w0: [(u.x - V.ox) / V.s, (u.y - V.oy) / V.s], t0: performance.now(), maxCount: touches().length, moved: 0, lastDeg: null, d: 0 };
+  gest = { ids: [a.id, b.id], d0: Math.hypot(a.sx - b.sx, a.sy - b.sy) || 1, a0: Math.atan2(b.sy - a.sy, b.sx - a.sx), r0: V.r, s0: V.s,
+    w0: [(u.x - V.ox) / V.s, (u.y - V.oy) / V.s], m, rotating: prev ? prev.rotating : false, d: 0,
+    t0: prev ? prev.t0 : performance.now(), maxCount: prev ? prev.maxCount : touches().length, moved: prev ? prev.moved : 0, lastDeg: prev ? prev.lastDeg : null };
 }
 function updateGesture() {
-  const t = touches();
-  if (t.length < 2) return;
-  const [a, b] = t;
+  const a = ptrs.get(gest.ids[0]), b = ptrs.get(gest.ids[1]);
+  if (!a || !b) return;
   const d = Math.hypot(a.sx - b.sx, a.sy - b.sy), m = { x: (a.sx + b.sx) / 2, y: (a.sy + b.sy) / 2 };
-  gest.d = d;
+  gest.d = d; gest.m = m;
   V.s = clamp(gest.s0 * d / gest.d0, .5, 96);
-  // Drehen, rastet bei 0°, 90°, 180° und 270° ein
-  let r = angN(gest.r0 + angN(Math.atan2(b.sy - a.sy, b.sx - a.sx) - gest.a0));
-  const q = Math.round(r / (Math.PI / 2)) * (Math.PI / 2);
-  if (Math.abs(r - q) < .09) r = q;
-  if (Math.abs(r) < 1e-6) r = 0;
-  V.r = r;
+  const twist = angN(Math.atan2(b.sy - a.sy, b.sx - a.sx) - gest.a0);
+  if (!gest.rotating && Math.abs(twist) > ROT_START) {
+    // Ab hier wird gedreht, ohne Sprung: die Drehung startet bei der aktuellen Fingerstellung
+    gest.rotating = true; gest.a0 = angN(gest.a0 + twist); gest.r0 = V.r;
+  }
+  if (gest.rotating) {
+    // Drehen, rastet nur knapp bei 0°, 90°, 180° und 270° ein
+    let r = angN(gest.r0 + angN(Math.atan2(b.sy - a.sy, b.sx - a.sx) - gest.a0));
+    const q = Math.round(r / (Math.PI / 2)) * (Math.PI / 2);
+    if (Math.abs(r - q) < ROT_SNAP) r = q;
+    if (Math.abs(r) < 1e-6) r = 0;
+    V.r = r;
+  }
   // Versatz so wählen, dass der Startpunkt unter der aktuellen Fingermitte liegt
   const c = Math.cos(-V.r), sn = Math.sin(-V.r), dx = m.x - V.SW / 2, dy = m.y - V.SH / 2;
   V.ox = V.W / 2 + dx * c - dy * sn - gest.w0[0] * V.s;
   V.oy = V.H / 2 + dx * sn + dy * c - gest.w0[1] * V.s;
   const deg = Math.round(((V.r * 180 / Math.PI) + 360) % 360);
-  if (Math.abs(angN(V.r - gest.r0)) > .02 && deg !== gest.lastDeg) { gest.lastDeg = deg; toast(`${deg}°`, 700); }
+  if (gest.rotating && deg !== gest.lastDeg) { gest.lastDeg = deg; toast(`${deg}°`, 700); }
   dirty = true;
 }
 function startHold(id, p) {

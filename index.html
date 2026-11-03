@@ -2106,7 +2106,7 @@ let layerMenuOpen = false;
 function renderLayers() {
   layersDirty = false;
   if (layersPop.hidden) return;
-  if (layerList.querySelector('input')) return; // gerade wird umbenannt
+  if (layerList.querySelector('input.lrename')) return; // gerade wird umbenannt (der Deckkraft-Regler im Menü zählt nicht)
   const acts = $('#layerActions');
   layersPop.append(acts); // Menü vor dem Neuaufbau aus der Liste nehmen
   layerList.textContent = '';
@@ -2356,7 +2356,7 @@ function startRename() {
   const row = layerList.querySelector(`.layer[data-id="${S.layer}"]`); if (!row) return;
   const span = row.querySelector('.lname'), l = activeLayer();
   const input = document.createElement('input');
-  input.value = l.name; input.maxLength = 40; input.setAttribute('aria-label', 'Name der Ebene');
+  input.className = 'lrename'; input.value = l.name; input.maxLength = 40; input.setAttribute('aria-label', 'Name der Ebene');
   span.replaceWith(input); input.focus(); input.select();
   let done = false;
   const finish = save => {

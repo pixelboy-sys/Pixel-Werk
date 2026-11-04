@@ -1,0 +1,49 @@
+# Baut die iPad-App von Pixelwerk in der Cloud und lädt sie zu TestFlight hoch.
+# Start: in Codemagic beim Projekt auf „Start new build“ und den Workflow „Pixelwerk iOS → TestFlight“ wählen.
+workflows:
+  ios-testflight:
+    name: Pixelwerk iOS → TestFlight
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    integrations:
+      # Name des App-Store-Connect-API-Schlüssels, so wie er in Codemagic unter Team settings → Integrations eingetragen ist
+      app_store_connect: Pixelwerk
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: io.github.pixelboysys.pixelwerk
+      vars:
+        XCODE_PROJECT: app/ios/App/App.xcodeproj
+        XCODE_SCHEME: App
+        # Apple-ID der App (Zahl aus App Store Connect → App-Informationen → Apple-ID)
+        APP_STORE_APPLE_ID: "0000000000"
+      node: 22
+      xcode: latest
+    scripts:
+      - name: Abhängigkeiten installieren
+        script: |
+          cd app
+          npm ci
+      - name: Web-App ins iOS-Projekt kopieren
+        script: |
+          cd app
+          npm run sync
+      - name: Signierung einrichten
+        script: xcode-project use-profiles
+      - name: Build-Nummer erhöhen
+        script: |
+          # Jede Version bei Apple braucht eine neue Build-Nummer: letzte Nummer aus TestFlight + 1 (beim allerersten Build 1)
+          LATEST=$(app-store-connect get-latest-testflight-build-number "$APP_STORE_APPLE_ID" 2>/dev/null || echo 0)
+          NEXT=$((LATEST + 1))
+          perl -pi -e "s/CURRENT_PROJECT_VERSION = \d+;/CURRENT_PROJECT_VERSION = $NEXT;/g" "$XCODE_PROJECT/project.pbxproj"
+          echo "Build-Nummer $NEXT"
+      - name: App bauen
+        script: xcode-project build-ipa --project "$XCODE_PROJECT" --scheme "$XCODE_SCHEME"
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+        submit_to_app_store: false

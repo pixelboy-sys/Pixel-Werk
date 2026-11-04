@@ -8,10 +8,11 @@
     "sync": "npm run copy-web && npx cap sync ios"
   },
   "dependencies": {
+    "@capacitor-community/in-app-review": "8.0.0",
     "@capacitor/core": "8.6.0",
+    "@capacitor/filesystem": "8.1.5",
     "@capacitor/ios": "8.6.0",
     "@capacitor/share": "8.0.3",
-    "@capacitor/filesystem": "8.1.5",
     "@capgo/native-purchases": "8.9.6"
   },
   "devDependencies": {

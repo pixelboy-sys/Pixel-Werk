@@ -333,9 +333,10 @@ svg{display:block}
 .lop{margin-left:6px;font-size:11px;font-weight:600;color:var(--muted)}
 .layer-menu button:disabled{opacity:.35;cursor:default}
 .layer-menu button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
-/* Clipping-Ebene: eingerückt, mit Haken zur Ebene darunter */
+/* Clipping-Ebene: eingerückt, mit Pfeil nach unten zu ihrer Basis */
 .layer.clip{margin-left:18px}
-.layer.clip::before{content:'';position:absolute;left:-13px;top:-4px;width:8px;height:24px;border-left:2px solid var(--accent);border-bottom:2px solid var(--accent);border-bottom-left-radius:5px;opacity:.8}
+.layer.clip::before{content:'';position:absolute;left:-13px;top:50%;width:9px;height:calc(50% + 2px);border-left:2px solid var(--accent);border-top:2px solid var(--accent);border-top-left-radius:5px;opacity:.85}
+.layer.clip::after{content:'';position:absolute;left:-17px;bottom:-6px;border:5px solid transparent;border-top:6px solid var(--accent);border-bottom:0;opacity:.85}
 @media (max-width:560px){ .bar .logo{display:none} }
 .pal-group{margin-top:6px}
 .pal-glabel{display:block;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:4px 0}

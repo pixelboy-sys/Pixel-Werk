@@ -45,5 +45,6 @@ workflows:
     publishing:
       app_store_connect:
         auth: integration
-        submit_to_testflight: true
+        # Interne Tester sehen jeden Build in TestFlight sofort. Externe Tests brauchen eine Beta-Prüfung, die starten wir bei Bedarf von Hand
+        submit_to_testflight: false
         submit_to_app_store: false

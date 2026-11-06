@@ -113,6 +113,7 @@ svg{display:block}
   box-shadow:0 18px 50px rgba(0,0,0,.5);z-index:20}
 .pop h4{margin:14px 0 8px;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
 .picker .sv{position:relative;height:180px;border-radius:10px;touch-action:none;cursor:crosshair}
+.picker .hue::before{content:'';position:absolute;inset:-10px -6px} /* größere Trefferfläche, v. a. für den Apple Pencil */
 .picker .hue{position:relative;height:24px;border-radius:12px;margin-top:12px;touch-action:none;cursor:pointer;
   background:linear-gradient(to right,#f00,#ff0,#0f0,#0ff,#00f,#f0f,#f00)}
 .picker .knob{position:absolute;width:22px;height:22px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.6),0 2px 6px rgba(0,0,0,.4);transform:translate(-50%,-50%);pointer-events:none}
@@ -421,6 +422,7 @@ svg{display:block}
 .px-sl span{display:flex;justify-content:space-between;font-size:13px;color:var(--muted)}
 .px-sl b{color:var(--fg);font-weight:600;font-variant-numeric:tabular-nums}
 .px-sl input{width:100%;accent-color:var(--accent)}
+input[type=range]{touch-action:none}
 .px-strip{display:flex;gap:6px;overflow-x:auto;margin-top:12px;padding:2px}
 .px-strip canvas{flex:none;height:52px;width:auto;max-width:none}
 @media (max-width:600px){ .px-grid{grid-template-columns:minmax(0,1fr)} }
@@ -1836,6 +1838,46 @@ function setTool(t, quiet) {
 }
 
 /* ---------- Farbwähler (Procreate-Stil) ---------- */
+/* Schieberegler: Antippen irgendwo auf der Leiste springt dorthin, Ziehen geht von überall.
+   Safari bewegt einen Regler sonst nur, wenn man genau den Knopf trifft (mit dem Apple Pencil oft daneben).
+   Ein Treffer bis RANGE_SLOP px über oder unter der Leiste zählt mit. */
+const RANGE_SLOP = 14;
+function rangeAt(e) {
+  if (e.target instanceof HTMLInputElement && e.target.type === 'range') return e.target;
+  if (e.target.closest('button,select,textarea,a,canvas,input:not([type=range]),.layer,.thumb,.chip,.sv,.hue,.harm-wheel,.sizer,.tab')) return null;
+  let best = null, bestD = Infinity;
+  for (const r of document.querySelectorAll('input[type=range]')) {
+    const b = r.getBoundingClientRect();
+    if (!b.width || r.disabled || e.clientX < b.left - 6 || e.clientX > b.right + 6) continue;
+    const d = e.clientY < b.top ? b.top - e.clientY : e.clientY > b.bottom ? e.clientY - b.bottom : 0;
+    if (d <= RANGE_SLOP && d < bestD) { best = r; bestD = d; }
+  }
+  return best;
+}
+function setRangeFrom(r, x) {
+  const b = r.getBoundingClientRect(), th = 22; // Knopfbreite: die Mitte des Knopfs folgt dem Stift
+  const min = +r.min || 0, max = r.max === '' ? 100 : +r.max, step = r.step === 'any' ? 0 : (+r.step || 1);
+  let v = min + clamp((x - b.left - th / 2) / Math.max(1, b.width - th)) * (max - min);
+  if (step) v = min + Math.round((v - min) / step) * step;
+  v = clamp(v, min, max);
+  if (+r.value === v) return;
+  r.value = String(v);
+  r.dispatchEvent(new Event('input', { bubbles: true }));
+}
+document.addEventListener('pointerdown', e => {
+  if (e.button > 0) return;
+  const r = rangeAt(e); if (!r) return;
+  e.preventDefault(); e.stopPropagation();
+  const id = e.pointerId, start = r.value;
+  setRangeFrom(r, e.clientX);
+  const mv = ev => { if (ev.pointerId === id) setRangeFrom(r, ev.clientX); };
+  const up = ev => {
+    if (ev.pointerId !== id) return;
+    window.removeEventListener('pointermove', mv, true); window.removeEventListener('pointerup', up, true); window.removeEventListener('pointercancel', up, true);
+    if (r.value !== start) r.dispatchEvent(new Event('change', { bubbles: true }));
+  };
+  window.addEventListener('pointermove', mv, true); window.addEventListener('pointerup', up, true); window.addEventListener('pointercancel', up, true);
+}, true);
 function dragArea(el, onMove, onEnd) {
   el.addEventListener('pointerdown', e => {
     e.preventDefault();

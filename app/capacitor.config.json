@@ -3,7 +3,7 @@
   "appName": "Pixelwerk",
   "webDir": "www",
   "ios": {
-    "contentInset": "never",
+    "contentInset": "always",
     "backgroundColor": "#121317",
     "scrollEnabled": false
   }

@@ -60,7 +60,8 @@ svg{display:block}
 #app>*{min-width:0}
 
 /* Werkzeugleiste */
-.bar{background:var(--panel);border-bottom:1px solid var(--line)}
+/* Oben Platz für die Statusleiste, unten Abstand zum Home-Balken (sonst wechselt ein Wisch in der Frame-Leiste die App) */
+.bar{background:var(--panel);border-bottom:1px solid var(--line);padding-top:env(safe-area-inset-top,0px)}
 .bar-in{display:flex;align-items:center;gap:10px;padding-block:8px;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 .logo{font-family:var(--display);font-weight:700;font-size:19px;letter-spacing:.02em;display:flex;align-items:center;gap:6px;padding:6px 4px;user-select:none}
@@ -170,7 +171,7 @@ svg{display:block}
 .toast{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);background:rgba(10,10,12,.88);color:var(--fg);padding:9px 14px;border-radius:10px;font-size:13px;z-index:30;pointer-events:none;max-width:calc(100% - 32px);text-align:center}
 
 /* Timeline */
-.timeline{background:var(--panel);border-top:1px solid var(--line)}
+.timeline{background:var(--panel);border-top:1px solid var(--line);padding-bottom:max(10px,calc(env(safe-area-inset-bottom,0px) + 8px))}
 .tl-in{display:flex;align-items:center;gap:12px;padding-block:8px;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 .tl-group{display:flex;align-items:center;gap:4px;flex:none}

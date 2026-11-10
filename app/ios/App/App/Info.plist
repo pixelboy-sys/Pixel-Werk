@@ -31,7 +31,9 @@
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>NSCameraUsageDescription</key>
-	<string>Pixelwerk uses the camera only when you take a photo to import it as an image or reference.</string>
+	<string>Pixelwerk uses the camera only when you take a photo or record a video to import it.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>iOS records sound with every camera video. Pixelwerk only uses the picture and ignores the sound.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Pixelwerk opens images from your photo library only when you choose to import them.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
